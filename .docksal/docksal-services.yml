@@ -26,7 +26,7 @@ services:
   # Used for all console commands and tools.
   cli:
     hostname: cli
-    image: docksal/cli:stable
+    image: docksal/cli:latest
     volumes:
       # Project root folder mapping
       - *project_root
