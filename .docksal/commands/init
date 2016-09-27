@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+
+## Initialize Docksal powered WordPress Installation
