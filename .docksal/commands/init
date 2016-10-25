@@ -1,10 +1,22 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+## Initialize Docksal powered Drupal 8 site
+##
+## Usage: fin init
+
+# Abort if anything fails
 set -e
 
-## Initialize Docksal powered WordPress Installation
+#-------------------------- Settings --------------------------------
 
-# Set to the appropriate site directory
-SITE_DOMAIN='wp.docksal'
+# PROJECT_ROOT is passed from fin.
+# The following variables are configured in the '.env' file: DOCROOT and others.
+
+DOCROOT_PATH="${PROJECT_ROOT}/${DOCROOT}"
+
+#-------------------------- END: Settings --------------------------------
+
+#-------------------------- Helper functions --------------------------------
 
 # Console colors
 red='\033[0;31m'
@@ -18,10 +30,13 @@ echo-green () { echo -e "${green}$1${NC}"; }
 echo-green-bg () { echo -e "${green_bg}$1${NC}"; }
 echo-yellow () { echo -e "${yellow}$1${NC}"; }
 
-# Check whether shell is interactive (otherwise we are running in a non-interactive script environment)
-is_tty ()
+if_failed ()
 {
-	[[ "$(/usr/bin/tty || true)" != "not a tty" ]]
+	if [ ! $? -eq 0 ]; then
+		if [[ "$1" == "" ]]; then msg="an error occurred"; else msg="$1"; fi
+		echo-red "$msg";
+		exit 1;
+	fi
 }
 
 is_windows ()
@@ -34,118 +49,85 @@ is_windows ()
 	fi
 }
 
-# Yes/no confirmation dialog with an optional message
-# @param $1 confirmation message
-_confirm ()
+# Copy a settings file.
+# Skips if the destination file already exists.
+# @param $1 source file
+# @param $2 destination file
+copy_settings_file()
 {
-	# Skip checks if not a tty
-	if ! is_tty ; then return 0; fi
-
-	while true; do
-		read -p "$1 [y/n]: " answer
-		case $answer in
-			[Yy]|[Yy][Ee][Ss] )
-				break
-				;;
-			[Nn]|[Nn][Oo] )
-				exit 1
-				;;
-			* )
-				echo 'Please answer yes or no.'
-		esac
-	done
+	local source="$1"
+	local dest="$2"
+	
+	if [[ ! -f $dest ]]; then
+		echo "Copying ${dest}..."
+		cp $source $dest
+	else
+		echo-yellow "${dest} already in place."
+	fi
 }
 
-# Copy a settings file from $source to $dest
-# Skips if the $dest already exists.
-_copy_settings_file()
-{
-  local source=${1}
-  local dest=${2}
+#-------------------------- END: Helper functions --------------------------------
 
-  if [[ ! -f $dest ]]; then
-    echo "Copying ${dest}..."
-    cp "$source" "$dest"
-  else
-    echo-yellow "${dest} already in place"
-  fi
-}
-
-# Copy settings files
-init_settings ()
-{
-  cd "$GIT_ROOT"
-
-  # docker-compose
-  _copy_settings_file ".docksal/docksal-local-minimal.yml" "docker-compose.yml"
-}
+#-------------------------- Functions --------------------------------
 
 # Generate wp-config.php file
 generate_config ()
 {
-  cd "$GIT_ROOT/docroot"
+	cd $DOCROOT_PATH
 
-  fin exec "wp core config --dbname=wordpress --dbuser=wordpress --dbpass=123 --dbhost=db"
+	fin exec "rm -f wp-config.php"
+	fin exec "wp core config --dbname=${MYSQL_DATABASE} --dbuser=${MYSQL_USER} --dbpass=${MYSQL_PASSWORD} --dbhost=db"
 }
 
 # Install the site
 site_install ()
 {
-  cd "$GIT_ROOT/docroot"
+	cd $DOCROOT_PATH
 
-  fin exec "wp core install --url=wp.docksal --title=WordPress-site --admin_user=admin --admin_password=123 --admin_email=info@example.com"
+	fin exec "wp core install \
+		--url=${VIRTUAL_HOST} \
+		--title='My WordPress Site' \
+		--admin_user=${WP_ADMIN_USER} \
+		--admin_password=${WP_ADMIN_PASS} \
+		--admin_email=${WP_ADMIN_EMAIL}"
 }
 
-# Create a new DB
-# @param $1 DB name
-db_create ()
-{
-  echo-yellow "Creating DB ${1}..."
-
-  local database=${1}
-  local mysql_exec='mysql -h $DB_1_PORT_3306_TCP_ADDR --user=root --password=$DB_1_ENV_MYSQL_ROOT_PASSWORD -e ';
-  local query="DROP DATABASE IF EXISTS ${database}; CREATE DATABASE ${database}; GRANT ALL ON ${database}.* TO "'$DB_1_ENV_MYSQL_USER'"@'%'"
-
-  fin exec "${mysql_exec} \"${query}\""
-}
+#-------------------------- END: Functions --------------------------------
 
 #-------------------------- Execution --------------------------------
 
-# Set repo root as working directory.
-GIT_ROOT=$(git rev-parse --show-toplevel)
-if [[ -z "$GIT_ROOT" ]]; then
-	echo-red "Git repository was not found"
-	exit 1;
+if [[ "$PROJECT_ROOT" == "" ]]; then
+	echo-red "\$PROJECT_ROOT is not set"
+	exit 1
 fi
-cd "$GIT_ROOT"
-
-# Project initialization steps
-echo -e "${green_bg} Step 1 ${NC}${green} Initializing local project configuration...${NC}"
-init_settings
 
 if [[ $DOCKER_RUNNING == "true" ]]; then
-  echo -e "${green_bg} Step 2 ${NC}${green} Recreating services...${NC}"
-  fin reset -f
+	echo -e "${green_bg} Step 1 ${NC}${green} Recreating services...${NC}"
+	fin reset -f
 else
-  echo -e "${green_bg} Step 2 ${NC}${green} Creating services...${NC}"
-  fin up
+	echo -e "${green_bg} Step 1 ${NC}${green} Creating services...${NC}"
+	fin up
 fi
 
 echo "Waiting 10s for MySQL to initialize...";
 sleep 10
 
-echo -e "${green_bg} Step 3 ${NC}${green} Generating wp-config.php file...${NC}"
+# Project initialization steps
+echo -e "${green_bg} Step 2 ${NC}${green} Generating wp-config.php...${NC}"
 generate_config
 
-echo -e "${green_bg} Step 4 ${NC}${green} Installing site...${NC}"
-site_install
+echo -e "${green_bg} Step 3 ${NC}${green} Installing site...${NC}"
+time site_install
 
 
 if is_windows; then
-	echo-green "Add ${SITE_DOMAIN} to your hosts file (/etc/hosts), e.g.:"
-	echo-green "192.168.10.10  ${SITE_DOMAIN}"
+	echo-green "Add ${VIRTUAL_HOST} to your hosts file (/etc/hosts), e.g.:"
+	echo-green "192.168.64.100  ${VIRTUAL_HOST}"
 	echo
 fi
 
 echo -en "${green_bg} DONE! ${NC} "
-echo -e "Open ${yellow}http://${SITE_DOMAIN}${NC} in your browser to verify the setup."
+echo -e "Open ${yellow}http://${VIRTUAL_HOST}${NC} in your browser to verify the setup."
+echo -e "Admin panel: ${yellow}http://${VIRTUAL_HOST}/wp-admin${NC}. User/password: ${yellow}${WP_ADMIN_USER}/${WP_ADMIN_PASS}${NC}  "
+
+#-------------------------- END: Execution --------------------------------

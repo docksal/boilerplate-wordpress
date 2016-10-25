@@ -1,5 +1,5 @@
-# Exclude local docker-compse.yml
-docker-compose.yml
-
 # IDEs
 .idea
+
+# WordPress
+wp-config.php
