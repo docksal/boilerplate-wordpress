@@ -4,7 +4,7 @@ This is a sample vanilla WordPress installation pre-configured for use with Dock
 
 Features:
 
-- Vannila WordPress
+- Vanilla WordPress
 - `fin init` example
 
 ## Setup instructions
@@ -13,8 +13,8 @@ Features:
 
 **This is a one time setup - skip this if you already have a working Docksal environment.**  
 
-Follow [Docksal environment setup instructions](https://github.com/docksal/docksal/blob/master/docs/docksal-env-setup.md)
-   
+Follow [Docksal environment setup instructions](https://https://github.com/docksal/docksal/blob/develop/docs/env-setup.md)
+
 ### Step #2: Project setup
 
 1. Clone this repo into your Projects directory
@@ -32,12 +32,12 @@ Follow [Docksal environment setup instructions](https://github.com/docksal/docks
     fin init
     ```
 
-	3. **On Windows** add `192.168.10.10  wp.docksal` to your hosts file
+3. **On Windows** add `192.168.64.100  wordpress.docksal` to your hosts file
 
 4. Point your browser to
 
     ```
-    http://wp.docksal
+    http://wordpress.docksal
     ```
 
 
