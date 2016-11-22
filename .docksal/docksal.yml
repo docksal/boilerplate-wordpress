@@ -15,7 +15,7 @@ services:
     image: docksal/apache:2.2-stable
     volumes:
       # Project root folder mapping
-      - "${PROJECT_ROOT}/:/var/www"
+      - ${PROJECT_ROOT}/:/var/www:ro
     labels:
       - io.docksal.virtual-host=${VIRTUAL_HOST}
       - io.docksal.project-root=${PROJECT_ROOT}
@@ -43,9 +43,9 @@ services:
     image: docksal/cli:latest
     volumes:
       # Project root folder mapping
-      - "${PROJECT_ROOT}/:/var/www"
+      - ${PROJECT_ROOT}/:/var/www
       # Host home directory mapping (for SSH keys and ther credentials).
-      - "${HOME}/:/.home"
+      - ${HOME}/:/.home:ro
     # Mount shared ssh-agent socket
     volumes_from:
-      - container:ssh-agent
+      - container:docksal-ssh-agent
