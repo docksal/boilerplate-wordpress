@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-## Initialize Docksal powered Drupal 8 site
+## Initialize a Docksal powered Wordpress site
 ##
 ## Usage: fin init
 
@@ -10,7 +10,7 @@ set -e
 #-------------------------- Settings --------------------------------
 
 # PROJECT_ROOT is passed from fin.
-# The following variables are configured in the '.env' file: DOCROOT and others.
+# The following variables are configured in the '.env' file: DOCROOT, VIRTUAL_HOST.
 
 DOCROOT_PATH="${PROJECT_ROOT}/${DOCROOT}"
 
@@ -30,15 +30,6 @@ echo-green () { echo -e "${green}$1${NC}"; }
 echo-green-bg () { echo -e "${green_bg}$1${NC}"; }
 echo-yellow () { echo -e "${yellow}$1${NC}"; }
 
-if_failed ()
-{
-	if [ ! $? -eq 0 ]; then
-		if [[ "$1" == "" ]]; then msg="an error occurred"; else msg="$1"; fi
-		echo-red "$msg";
-		exit 1;
-	fi
-}
-
 is_windows ()
 {
 	local res=$(uname | grep 'CYGWIN_NT')
@@ -46,23 +37,6 @@ is_windows ()
 		return 0
 	else
 		return 1
-	fi
-}
-
-# Copy a settings file.
-# Skips if the destination file already exists.
-# @param $1 source file
-# @param $2 destination file
-copy_settings_file()
-{
-	local source="$1"
-	local dest="$2"
-	
-	if [[ ! -f $dest ]]; then
-		echo "Copying ${dest}..."
-		cp $source $dest
-	else
-		echo-yellow "${dest} already in place."
 	fi
 }
 
@@ -79,7 +53,7 @@ generate_config ()
 	fin exec "wp core config --dbname=${MYSQL_DATABASE} --dbuser=${MYSQL_USER} --dbpass=${MYSQL_PASSWORD} --dbhost=db"
 }
 
-# Install the site
+# Install site
 site_install ()
 {
 	cd $DOCROOT_PATH
