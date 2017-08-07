@@ -382,12 +382,14 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 			src: imageData.url,
 			width: width || null,
 			height: height || null,
-			alt: imageData.alt,
 			title: imageData.title || null,
 			'class': classes.join( ' ' ) || null
 		};
 
 		dom.setAttribs( imageNode, attrs );
+
+		// Preserve empty alt attributes.
+		editor.$( imageNode ).attr( 'alt', imageData.alt || '' );
 
 		linkAttrs = {
 			href: imageData.linkUrl,
@@ -910,6 +912,14 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 					p = dom.create( 'p' );
 					dom.insertAfter( p, captionParent );
 					editor.selection.setCursorLocation( p, 0 );
+
+					// If the image is selected and the user pastes "over" it,
+					// replace both the image and the caption elements with the pasted content.
+					// This matches the behavior when pasting over non-caption images.
+					if ( node.nodeName === 'IMG' ) {
+                        editor.$( captionParent ).remove();
+                    }
+
 					editor.nodeChanged();
 				} else {
 					// Clicking Indent or Outdent while an image with a caption is selected breaks the caption.
@@ -1026,7 +1036,7 @@ tinymce.PluginManager.add( 'wpeditimage', function( editor ) {
 	editor.on( 'beforeGetContent', function( event ) {
 		if ( event.format !== 'raw' ) {
 			editor.$( 'img[id="__wp-temp-img-id"]' ).attr( 'id', null );
-		}	
+		}
 	});
 
 	editor.on( 'BeforeSetContent', function( event ) {

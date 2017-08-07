@@ -457,6 +457,7 @@ wp.customize.selectiveRefresh = ( function( $, api ) {
 				if ( 'undefined' !== typeof console && console.error ) {
 					console.error( partial.id, error );
 				}
+				partial.fallback( error, [ placement ] );
 			}
 			/* jshint ignore:start */
 			document.write = self.orginalDocumentWrite;
@@ -468,6 +469,15 @@ wp.customize.selectiveRefresh = ( function( $, api ) {
 
 			// Prevent placement container from being being re-triggered as being rendered among nested partials.
 			placement.container.data( 'customize-partial-content-rendered', true );
+
+			/*
+			 * Note that the 'wp_audio_shortcode_library' and 'wp_video_shortcode_library' filters
+			 * will determine whether or not wp.mediaelement is loaded and whether it will
+			 * initialize audio and video respectively. See also https://core.trac.wordpress.org/ticket/40144
+			 */
+			if ( wp.mediaelement ) {
+				wp.mediaelement.initialize();
+			}
 
 			/**
 			 * Announce when a partial's placement has been rendered so that dynamic elements can be re-built.
@@ -849,7 +859,7 @@ wp.customize.selectiveRefresh = ( function( $, api ) {
 			containerElements = containerElements.add( rootElement );
 		}
 		containerElements.each( function() {
-			var containerElement = $( this ), partial, id, Constructor, partialOptions, containerContext;
+			var containerElement = $( this ), partial, placement, id, Constructor, partialOptions, containerContext;
 			id = containerElement.data( 'customize-partial-id' );
 			if ( ! id ) {
 				return;
@@ -874,14 +884,19 @@ wp.customize.selectiveRefresh = ( function( $, api ) {
 			 */
 			if ( options.triggerRendered && ! containerElement.data( 'customize-partial-content-rendered' ) ) {
 
-				/**
-				 * Announce when a partial's nested placement has been re-rendered.
-				 */
-				self.trigger( 'partial-content-rendered', new Placement( {
+				placement = new Placement( {
 					partial: partial,
 					context: containerContext,
 					container: containerElement
-				} ) );
+				} );
+
+				$( placement.container ).attr( 'title', self.data.l10n.shiftClickToEdit );
+				partial.createEditShortcutForPlacement( placement );
+
+				/**
+				 * Announce when a partial's nested placement has been re-rendered.
+				 */
+				self.trigger( 'partial-content-rendered', placement );
 			}
 			containerElement.data( 'customize-partial-content-rendered', true );
 		} );

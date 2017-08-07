@@ -63,6 +63,12 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 		) );
 
 		register_rest_route( $this->namespace, '/' . $this->rest_base . '/(?P<id>[\d]+)', array(
+			'args' => array(
+				'id' => array(
+					'description' => __( 'Unique identifier for the object.' ),
+					'type'        => 'integer',
+				),
+			),
 			array(
 				'methods'  => WP_REST_Server::READABLE,
 				'callback' => array( $this, 'get_item' ),
@@ -70,7 +76,7 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 				'args'     => array(
 					'context'          => $this->get_context_param( array( 'default' => 'view' ) ),
 					'password' => array(
-						'description' => __( 'The password for the post if it is password protected.' ),
+						'description' => __( 'The password for the parent post of the comment (if the post is password protected).' ),
 						'type'        => 'string',
 					),
 				),
@@ -92,7 +98,7 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 						'description' => __( 'Whether to bypass trash and force deletion.' ),
 					),
 					'password' => array(
-						'description' => __( 'The password for the post if it is password protected.' ),
+						'description' => __( 'The password for the parent post of the comment (if the post is password protected).' ),
 						'type'        => 'string',
 					),
 				),
@@ -300,6 +306,36 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	}
 
 	/**
+	 * Get the comment, if the ID is valid.
+	 *
+	 * @since 4.7.2
+	 *
+	 * @param int $id Supplied ID.
+	 * @return WP_Comment|WP_Error Comment object if ID is valid, WP_Error otherwise.
+	 */
+	protected function get_comment( $id ) {
+		$error = new WP_Error( 'rest_comment_invalid_id', __( 'Invalid comment ID.' ), array( 'status' => 404 ) );
+		if ( (int) $id <= 0 ) {
+			return $error;
+		}
+
+		$id = (int) $id;
+		$comment = get_comment( $id );
+		if ( empty( $comment ) ) {
+			return $error;
+		}
+
+		if ( ! empty( $comment->comment_post_ID ) ) {
+			$post = get_post( (int) $comment->comment_post_ID );
+			if ( empty( $post ) ) {
+				return new WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.' ), array( 'status' => 404 ) );
+			}
+		}
+
+		return $comment;
+	}
+
+	/**
 	 * Checks if a given request has access to read the comment.
 	 *
 	 * @since 4.7.0
@@ -309,12 +345,9 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool True if the request has read access for the item, error object otherwise.
 	 */
 	public function get_item_permissions_check( $request ) {
-		$id = (int) $request['id'];
-
-		$comment = get_comment( $id );
-
-		if ( ! $comment ) {
-			return true;
+		$comment = $this->get_comment( $request['id'] );
+		if ( is_wp_error( $comment ) ) {
+			return $comment;
 		}
 
 		if ( ! empty( $request['context'] ) && 'edit' === $request['context'] && ! current_user_can( 'moderate_comments' ) ) {
@@ -344,18 +377,9 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * @return WP_Error|WP_REST_Response Response object on success, or error object on failure.
 	 */
 	public function get_item( $request ) {
-		$id = (int) $request['id'];
-
-		$comment = get_comment( $id );
-		if ( empty( $comment ) ) {
-			return new WP_Error( 'rest_comment_invalid_id', __( 'Invalid comment ID.' ), array( 'status' => 404 ) );
-		}
-
-		if ( ! empty( $comment->comment_post_ID ) ) {
-			$post = get_post( $comment->comment_post_ID );
-			if ( empty( $post ) ) {
-				return new WP_Error( 'rest_post_invalid_id', __( 'Invalid post ID.' ), array( 'status' => 404 ) );
-			}
+		$comment = $this->get_comment( $request['id'] );
+		if ( is_wp_error( $comment ) ) {
+			return $comment;
 		}
 
 		$data = $this->prepare_item_for_response( $comment, $request );
@@ -552,13 +576,19 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 		 * Filters a comment before it is inserted via the REST API.
 		 *
 		 * Allows modification of the comment right before it is inserted via wp_insert_comment().
+		 * Returning a WP_Error value from the filter will shortcircuit insertion and allow
+		 * skipping further processing.
 		 *
 		 * @since 4.7.0
+		 * @since 4.8.0 $prepared_comment can now be a WP_Error to shortcircuit insertion.
 		 *
-		 * @param array           $prepared_comment The prepared comment data for wp_insert_comment().
+		 * @param array|WP_Error  $prepared_comment The prepared comment data for wp_insert_comment().
 		 * @param WP_REST_Request $request          Request used to insert the comment.
 		 */
 		$prepared_comment = apply_filters( 'rest_pre_insert_comment', $prepared_comment, $request );
+		if ( is_wp_error( $prepared_comment ) ) {
+			return $prepared_comment;
+		}
 
 		$comment_id = wp_insert_comment( wp_filter_comment( wp_slash( (array) $prepared_comment ) ) );
 
@@ -624,12 +654,12 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool True if the request has access to update the item, error object otherwise.
 	 */
 	public function update_item_permissions_check( $request ) {
+		$comment = $this->get_comment( $request['id'] );
+		if ( is_wp_error( $comment ) ) {
+			return $comment;
+		}
 
-		$id = (int) $request['id'];
-
-		$comment = get_comment( $id );
-
-		if ( $comment && ! $this->check_edit_permission( $comment ) ) {
+		if ( ! $this->check_edit_permission( $comment ) ) {
 			return new WP_Error( 'rest_cannot_edit', __( 'Sorry, you are not allowed to edit this comment.' ), array( 'status' => rest_authorization_required_code() ) );
 		}
 
@@ -646,13 +676,12 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * @return WP_Error|WP_REST_Response Response object on success, or error object on failure.
 	 */
 	public function update_item( $request ) {
-		$id = (int) $request['id'];
-
-		$comment = get_comment( $id );
-
-		if ( empty( $comment ) ) {
-			return new WP_Error( 'rest_comment_invalid_id', __( 'Invalid comment ID.' ), array( 'status' => 404 ) );
+		$comment = $this->get_comment( $request['id'] );
+		if ( is_wp_error( $comment ) ) {
+			return $comment;
 		}
+
+		$id = $comment->comment_ID;
 
 		if ( isset( $request['type'] ) && get_comment_type( $id ) !== $request['type'] ) {
 			return new WP_Error( 'rest_comment_invalid_type', __( 'Sorry, you are not allowed to change the comment type.' ), array( 'status' => 404 ) );
@@ -708,7 +737,7 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 
 		$comment = get_comment( $id );
 
-		/* This action is documented in lib/endpoints/class-wp-rest-comments-controller.php */
+		/** This action is documented in wp-includes/rest-api/endpoints/class-wp-rest-comments-controller.php */
 		do_action( 'rest_insert_comment', $comment, $request, false );
 
 		$schema = $this->get_item_schema();
@@ -744,11 +773,9 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * @return WP_Error|bool True if the request has access to delete the item, error object otherwise.
 	 */
 	public function delete_item_permissions_check( $request ) {
-		$id      = (int) $request['id'];
-		$comment = get_comment( $id );
-
-		if ( ! $comment ) {
-			return new WP_Error( 'rest_comment_invalid_id', __( 'Invalid comment ID.' ), array( 'status' => 404 ) );
+		$comment = $this->get_comment( $request['id'] );
+		if ( is_wp_error( $comment ) ) {
+			return $comment;
 		}
 
 		if ( ! $this->check_edit_permission( $comment ) ) {
@@ -767,14 +794,12 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * @return WP_Error|WP_REST_Response Response object on success, or error object on failure.
 	 */
 	public function delete_item( $request ) {
-		$id    = (int) $request['id'];
-		$force = isset( $request['force'] ) ? (bool) $request['force'] : false;
-
-		$comment = get_comment( $id );
-
-		if ( empty( $comment ) ) {
-			return new WP_Error( 'rest_comment_invalid_id', __( 'Invalid comment ID.' ), array( 'status' => 404 ) );
+		$comment = $this->get_comment( $request['id'] );
+		if ( is_wp_error( $comment ) ) {
+			return $comment;
 		}
+
+		$force = isset( $request['force'] ) ? (bool) $request['force'] : false;
 
 		/**
 		 * Filters whether a comment can be trashed.
@@ -1593,6 +1618,7 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * string is allowed when a comment is being updated.
 	 *
 	 * @since 4.7.0
+	 * @access public
 	 *
 	 * @param string          $value   Author email value submitted.
 	 * @param WP_REST_Request $request Full details about the request.

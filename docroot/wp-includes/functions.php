@@ -1213,18 +1213,6 @@ function bool_from_yn( $yn ) {
 function do_feed() {
 	global $wp_query;
 
-	// Determine if we are looking at the main comment feed
-	$is_main_comments_feed = ( $wp_query->is_comment_feed() && ! $wp_query->is_singular() );
-
-	/*
-	 * Check the queried object for the existence of posts if it is not a feed for an archive,
-	 * search result, or main comments. By checking for the absense of posts we can prevent rendering the feed
-	 * templates at invalid endpoints. e.g.) /wp-content/plugins/feed/
-	 */
-	if ( ! $wp_query->have_posts() && ! ( $wp_query->is_archive() || $wp_query->is_search() || $is_main_comments_feed ) ) {
-		wp_die( __( 'ERROR: This is not a valid feed.' ), '', array( 'response' => 404 ) );
-	}
-
 	$feed = get_query_var( 'feed' );
 
 	// Remove the pad, if present.
@@ -1921,6 +1909,7 @@ function wp_upload_dir( $time = null, $create_dir = true, $refresh_cache = false
 /**
  * A non-filtered, non-cached version of wp_upload_dir() that doesn't check the path.
  *
+ * @since 4.5.0
  * @access private
  *
  * @param string $time Optional. Time formatted in 'yyyy/mm'. Default null.
@@ -2074,7 +2063,7 @@ function wp_unique_filename( $dir, $filename, $unique_filename_callback = null )
 
 			// Check for both lower and upper case extension or image sub-sizes may be overwritten.
 			while ( file_exists($dir . "/$filename") || file_exists($dir . "/$filename2") ) {
-				$new_number = $number + 1;
+				$new_number = (int) $number + 1;
 				$filename = str_replace( array( "-$number$ext", "$number$ext" ), "-$new_number$ext", $filename );
 				$filename2 = str_replace( array( "-$number$ext2", "$number$ext2" ), "-$new_number$ext2", $filename2 );
 				$number = $new_number;
@@ -2094,11 +2083,13 @@ function wp_unique_filename( $dir, $filename, $unique_filename_callback = null )
 		}
 
 		while ( file_exists( $dir . "/$filename" ) ) {
+			$new_number = (int) $number + 1;
 			if ( '' == "$number$ext" ) {
-				$filename = "$filename-" . ++$number;
+				$filename = "$filename-" . $new_number;
 			} else {
-				$filename = str_replace( array( "-$number$ext", "$number$ext" ), "-" . ++$number . $ext, $filename );
+				$filename = str_replace( array( "-$number$ext", "$number$ext" ), "-" . $new_number . $ext, $filename );
 			}
+			$number = $new_number;
 		}
 	}
 
@@ -2138,7 +2129,7 @@ function wp_upload_bits( $name, $deprecated, $bits, $time = null ) {
 
 	$wp_filetype = wp_check_filetype( $name );
 	if ( ! $wp_filetype['ext'] && ! current_user_can( 'unfiltered_upload' ) )
-		return array( 'error' => __( 'Invalid file type' ) );
+		return array( 'error' => __( 'Sorry, this file type is not permitted for security reasons.' ) );
 
 	$upload = wp_upload_dir( $time );
 
@@ -2278,15 +2269,15 @@ function wp_check_filetype_and_ext( $file, $filename, $mimes = null ) {
 		return compact( 'ext', 'type', 'proper_filename' );
 	}
 
+	$real_mime = false;
+
 	// Validate image types.
 	if ( $type && 0 === strpos( $type, 'image/' ) ) {
 
 		// Attempt to figure out what type of image it actually is
 		$real_mime = wp_get_image_mime( $file );
 
-		if ( ! $real_mime ) {
-			$type = $ext = false;
-		} elseif ( $real_mime != $type ) {
+		if ( $real_mime && $real_mime != $type ) {
 			/**
 			 * Filters the list mapping image mime types to their respective extensions.
 			 *
@@ -2317,18 +2308,29 @@ function wp_check_filetype_and_ext( $file, $filename, $mimes = null ) {
 				$ext = $wp_filetype['ext'];
 				$type = $wp_filetype['type'];
 			} else {
-				$type = $ext = false;
+				// Reset $real_mime and try validating again.
+				$real_mime = false;
 			}
 		}
-	} elseif ( function_exists( 'finfo_file' ) ) {
-		// Use finfo_file if available to validate non-image files.
+	}
+
+	// Validate files that didn't get validated during previous checks.
+	if ( $type && ! $real_mime && extension_loaded( 'fileinfo' ) ) {
 		$finfo = finfo_open( FILEINFO_MIME_TYPE );
 		$real_mime = finfo_file( $finfo, $file );
 		finfo_close( $finfo );
 
-		// If the extension does not match the file's real type, return false.
-		if ( $real_mime !== $type ) {
-			$type = $ext = false;
+		/*
+		 * If $real_mime doesn't match what we're expecting, we need to do some extra
+		 * vetting of application mime types to make sure this type of file is allowed.
+		 * Other mime types are assumed to be safe, but should be considered unverified.
+		 */
+		if ( $real_mime && ( $real_mime !== $type ) && ( 0 === strpos( $real_mime, 'application' ) ) ) {
+			$allowed = get_allowed_mime_types();
+
+			if ( ! in_array( $real_mime, $allowed ) ) {
+				$type = $ext = false;
+			}
 		}
 	}
 
@@ -2365,7 +2367,8 @@ function wp_get_image_mime( $file ) {
 	 */
 	try {
 		if ( is_callable( 'exif_imagetype' ) ) {
-			$mime = image_type_to_mime_type( exif_imagetype( $file ) );
+			$imagetype = exif_imagetype( $file );
+			$mime = ( $imagetype ) ? image_type_to_mime_type( $imagetype ) : false;
 		} elseif ( function_exists( 'getimagesize' ) ) {
 			$imagesize = getimagesize( $file );
 			$mime = ( isset( $imagesize['mime'] ) ) ? $imagesize['mime'] : false;
@@ -5153,6 +5156,8 @@ function _device_can_upload() {
 /**
  * Test if a given path is a stream URL
  *
+ * @since 3.5.0
+ *
  * @param string $path The resource path or URL.
  * @return bool True if the path is a stream URL.
  */
@@ -5434,7 +5439,7 @@ function wp_delete_file( $file ) {
 	 *
 	 * @since 2.1.0
 	 *
-	 * @param string $medium Path to the file to delete.
+	 * @param string $file Path to the file to delete.
 	 */
 	$delete = apply_filters( 'wp_delete_file', $file );
 	if ( ! empty( $delete ) ) {
@@ -5623,7 +5628,7 @@ function wp_generate_uuid4() {
  *
  * @since 4.7.0
  *
- * @param $group Where the cache contents are grouped.
+ * @param string $group Where the cache contents are grouped.
  *
  * @return string $last_changed UNIX timestamp with microseconds representing when the group was last changed.
  */
