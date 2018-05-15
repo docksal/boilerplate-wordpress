@@ -1,7 +1,5 @@
 # Docksal powered WordPress Installation
 
-This is a sample vanilla WordPress installation pre-configured for use with Docksal.
-
 Features:
 
 - Vanilla WordPress
