@@ -28,18 +28,19 @@ if ( force_ssl_admin() && ! is_ssl() ) {
  * @param string   $title    Optional. WordPress login Page title to display in the `<title>` element.
  *                           Default 'Log In'.
  * @param string   $message  Optional. Message to display in header. Default empty.
- * @param WP_Error $wp_error Optional. The error to pass. Default empty.
+ * @param WP_Error $wp_error Optional. The error to pass. Default is a WP_Error instance.
  */
-function login_header( $title = 'Log In', $message = '', $wp_error = '' ) {
+function login_header( $title = 'Log In', $message = '', $wp_error = null ) {
 	global $error, $interim_login, $action;
 
 	// Don't index any of these forms
-	add_action( 'login_head', 'wp_no_robots' );
+	add_action( 'login_head', 'wp_sensitive_page_meta' );
 
 	add_action( 'login_head', 'wp_login_viewport_meta' );
 
-	if ( empty($wp_error) )
+	if ( ! is_wp_error( $wp_error ) ) {
 		$wp_error = new WP_Error();
+	}
 
 	// Shake it!
 	$shake_error_codes = array( 'empty_password', 'empty_email', 'invalid_email', 'invalidcombo', 'empty_username', 'invalid_username', 'incorrect_password' );
@@ -436,9 +437,6 @@ setcookie( TEST_COOKIE, 'WP Cookie check', 0, COOKIEPATH, COOKIE_DOMAIN, $secure
 if ( SITECOOKIEPATH != COOKIEPATH )
 	setcookie( TEST_COOKIE, 'WP Cookie check', 0, SITECOOKIEPATH, COOKIE_DOMAIN, $secure );
 
-$lang            = ! empty( $_GET['wp_lang'] ) ? sanitize_text_field( $_GET['wp_lang'] ) : '';
-$switched_locale = switch_to_locale( $lang );
-
 /**
  * Fires when the login form is initialized.
  *
@@ -499,10 +497,6 @@ case 'postpass' :
 	}
 	setcookie( 'wp-postpass_' . COOKIEHASH, $hasher->HashPassword( wp_unslash( $_POST['post_password'] ) ), $expire, COOKIEPATH, COOKIE_DOMAIN, $secure );
 
-	if ( $switched_locale ) {
-	    restore_previous_locale();
-	}
-
 	wp_safe_redirect( wp_get_referer() );
 	exit();
 
@@ -518,10 +512,6 @@ case 'logout' :
 	} else {
 		$redirect_to = 'wp-login.php?loggedout=true';
 		$requested_redirect_to = '';
-	}
-
-	if ( $switched_locale ) {
-	    restore_previous_locale();
 	}
 
 	/**
@@ -616,10 +606,6 @@ endif;
 
 <?php
 login_footer('user_login');
-
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
 
 break;
 
@@ -746,10 +732,6 @@ endif;
 <?php
 login_footer('user_pass');
 
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
-
 break;
 
 case 'register' :
@@ -832,10 +814,6 @@ case 'register' :
 
 <?php
 login_footer('user_login');
-
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
 
 break;
 
@@ -1117,10 +1095,6 @@ try {
 
 <?php
 login_footer();
-
-if ( $switched_locale ) {
-    restore_previous_locale();
-}
 
 break;
 } // end action switch

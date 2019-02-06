@@ -622,8 +622,19 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 		}
 
 		$context = current_user_can( 'moderate_comments' ) ? 'edit' : 'view';
-
 		$request->set_param( 'context', $context );
+
+		/**
+		 * Fires completely after a comment is created or updated via the REST API.
+		 *
+		 * @since 5.0.0
+		 *
+		 * @param WP_Comment      $comment  Inserted or updated comment object.
+		 * @param WP_REST_Request $request  Request object.
+		 * @param bool            $creating True when creating a comment, false
+		 *                                  when updating.
+		 */
+		do_action( 'rest_after_insert_comment', $comment, $request, true );
 
 		$response = $this->prepare_item_for_response( $comment, $request );
 		$response = rest_ensure_response( $response );
@@ -747,6 +758,9 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 
 		$request->set_param( 'context', 'edit' );
 
+		/** This action is documented in wp-includes/rest-api/endpoints/class-wp-rest-comments-controller.php */
+		do_action( 'rest_after_insert_comment', $comment, $request, false );
+
 		$response = $this->prepare_item_for_response( $comment, $request );
 
 		return rest_ensure_response( $response );
@@ -851,35 +865,79 @@ class WP_REST_Comments_Controller extends WP_REST_Controller {
 	 * @return WP_REST_Response Response object.
 	 */
 	public function prepare_item_for_response( $comment, $request ) {
-		$data = array(
-			'id'                 => (int) $comment->comment_ID,
-			'post'               => (int) $comment->comment_post_ID,
-			'parent'             => (int) $comment->comment_parent,
-			'author'             => (int) $comment->user_id,
-			'author_name'        => $comment->comment_author,
-			'author_email'       => $comment->comment_author_email,
-			'author_url'         => $comment->comment_author_url,
-			'author_ip'          => $comment->comment_author_IP,
-			'author_user_agent'  => $comment->comment_agent,
-			'date'               => mysql_to_rfc3339( $comment->comment_date ),
-			'date_gmt'           => mysql_to_rfc3339( $comment->comment_date_gmt ),
-			'content'            => array(
+
+		$fields = $this->get_fields_for_response( $request );
+		$data   = array();
+
+		if ( in_array( 'id', $fields, true ) ) {
+			$data['id'] = (int) $comment->comment_ID;
+		}
+
+		if ( in_array( 'post', $fields, true ) ) {
+			$data['post'] = (int) $comment->comment_post_ID;
+		}
+
+		if ( in_array( 'parent', $fields, true ) ) {
+			$data['parent'] = (int) $comment->comment_parent;
+		}
+
+		if ( in_array( 'author', $fields, true ) ) {
+			$data['author'] = (int) $comment->user_id;
+		}
+
+		if ( in_array( 'author_name', $fields, true ) ) {
+			$data['author_name'] = $comment->comment_author;
+		}
+
+		if ( in_array( 'author_email', $fields, true ) ) {
+			$data['author_email'] = $comment->comment_author_email;
+		}
+
+		if ( in_array( 'author_url', $fields, true ) ) {
+			$data['author_url'] = $comment->comment_author_url;
+		}
+
+		if ( in_array( 'author_ip', $fields, true ) ) {
+			$data['author_ip'] = $comment->comment_author_IP;
+		}
+
+		if ( in_array( 'author_user_agent', $fields, true ) ) {
+			$data['author_user_agent'] = $comment->comment_agent;
+		}
+
+		if ( in_array( 'date', $fields, true ) ) {
+			$data['date'] = mysql_to_rfc3339( $comment->comment_date );
+		}
+
+		if ( in_array( 'date_gmt', $fields, true ) ) {
+			$data['date_gmt'] = mysql_to_rfc3339( $comment->comment_date_gmt );
+		}
+
+		if ( in_array( 'content', $fields, true ) ) {
+			$data['content'] = array(
 				/** This filter is documented in wp-includes/comment-template.php */
 				'rendered' => apply_filters( 'comment_text', $comment->comment_content, $comment ),
 				'raw'      => $comment->comment_content,
-			),
-			'link'               => get_comment_link( $comment ),
-			'status'             => $this->prepare_status_response( $comment->comment_approved ),
-			'type'               => get_comment_type( $comment->comment_ID ),
-		);
+			);
+		}
 
-		$schema = $this->get_item_schema();
+		if ( in_array( 'link', $fields, true ) ) {
+			$data['link'] = get_comment_link( $comment );
+		}
 
-		if ( ! empty( $schema['properties']['author_avatar_urls'] ) ) {
+		if ( in_array( 'status', $fields, true ) ) {
+			$data['status'] = $this->prepare_status_response( $comment->comment_approved );
+		}
+
+		if ( in_array( 'type', $fields, true ) ) {
+			$data['type'] = get_comment_type( $comment->comment_ID );
+		}
+
+		if ( in_array( 'author_avatar_urls', $fields, true ) ) {
 			$data['author_avatar_urls'] = rest_get_avatar_urls( $comment->comment_author_email );
 		}
 
-		if ( ! empty( $schema['properties']['meta'] ) ) {
+		if ( in_array( 'meta', $fields, true ) ) {
 			$data['meta'] = $this->meta->get_value( $comment->comment_ID, $request );
 		}
 

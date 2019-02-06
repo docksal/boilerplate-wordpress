@@ -141,6 +141,7 @@
 
 .welcome-panel .welcome-panel-close {
 	position: absolute;
+	z-index: 10;
 	top: 10px;
 	left: 10px;
 	padding: 10px 21px 10px 15px;
@@ -165,7 +166,7 @@
 }
 
 .welcome-panel-content {
-	margin-right: 13px;
+	margin: 0 13px;
 	max-width: 1500px;
 }
 
@@ -202,7 +203,7 @@
 }
 
 .welcome-panel .welcome-panel-column ul {
-	margin: 0.8em 0 1em 1em;
+		margin: 0.8em 0 1em 1em;
 }
 
 .welcome-panel .welcome-panel-column li {
@@ -1223,7 +1224,6 @@ a.rsswidget {
 	.welcome-panel .welcome-panel-column ul {
 		margin: 0.4em 0 0;
 	}
-
 }
 
 @media screen and ( max-width: 782px ) {

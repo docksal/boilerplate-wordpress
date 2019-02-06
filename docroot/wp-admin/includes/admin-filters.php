@@ -47,6 +47,8 @@ add_action( 'admin_head', '_ipad_meta'               );
 
 // Privacy tools
 add_action( 'admin_menu', '_wp_privacy_hook_requests_page' );
+add_action( 'load-tools_page_export_personal_data', '_wp_privacy_requests_screen_options' );
+add_action( 'load-tools_page_remove_personal_data', '_wp_privacy_requests_screen_options' );
 
 // Prerendering.
 if ( ! is_customize_preview() ) {
@@ -66,8 +68,10 @@ add_action( 'update_option_new_admin_email', 'update_option_new_admin_email', 10
 
 add_filter( 'heartbeat_received', 'wp_check_locked_posts',  10,  3 );
 add_filter( 'heartbeat_received', 'wp_refresh_post_lock',   10,  3 );
-add_filter( 'wp_refresh_nonces', 'wp_refresh_post_nonces', 10,  3 );
 add_filter( 'heartbeat_received', 'heartbeat_autosave',     500, 2 );
+
+add_filter( 'wp_refresh_nonces', 'wp_refresh_post_nonces', 10, 3 );
+add_filter( 'wp_refresh_nonces', 'wp_refresh_heartbeat_nonces' );
 
 add_filter( 'heartbeat_settings', 'wp_heartbeat_set_suspension' );
 
@@ -142,7 +146,7 @@ add_action( 'wp_privacy_personal_data_erased', '_wp_privacy_send_erasure_fulfill
 add_action( 'admin_init', array( 'WP_Privacy_Policy_Content', 'text_change_check' ), 100 );
 
 // Show a "postbox" with the text suggestions for a privacy policy.
-add_action( 'edit_form_after_title', array( 'WP_Privacy_Policy_Content', 'notice' ) );
+add_action( 'admin_notices', array( 'WP_Privacy_Policy_Content', 'notice' ) );
 
 // Add the suggested policy text from WordPress.
 add_action( 'admin_init', array( 'WP_Privacy_Policy_Content', 'add_suggested_content' ), 1 );
@@ -150,3 +154,5 @@ add_action( 'admin_init', array( 'WP_Privacy_Policy_Content', 'add_suggested_con
 // Update the cached policy info when the policy page is updated.
 add_action( 'post_updated', array( 'WP_Privacy_Policy_Content', '_policy_page_updated' ) );
 
+// Append '(Draft)' to draft page titles in the privacy page dropdown.
+add_filter( 'list_pages', '_wp_privacy_settings_filter_draft_page_titles', 10, 2 );

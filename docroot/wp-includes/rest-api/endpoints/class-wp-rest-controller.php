@@ -212,12 +212,7 @@ abstract class WP_REST_Controller {
 
 		$data   = (array) $response->get_data();
 		$server = rest_get_server();
-
-		if ( method_exists( $server, 'get_compact_response_links' ) ) {
-			$links = call_user_func( array( $server, 'get_compact_response_links' ), $response );
-		} else {
-			$links = call_user_func( array( $server, 'get_response_links' ), $response );
-		}
+		$links  = $server->get_compact_response_links( $response );
 
 		if ( ! empty( $links ) ) {
 			$data['_links'] = $links;
@@ -385,9 +380,15 @@ abstract class WP_REST_Controller {
 
 		$additional_fields = $this->get_additional_fields();
 
+		$requested_fields = $this->get_fields_for_response( $request );
+
 		foreach ( $additional_fields as $field_name => $field_options ) {
 
 			if ( ! $field_options['get_callback'] ) {
+				continue;
+			}
+
+			if ( ! in_array( $field_name, $requested_fields, true ) ) {
 				continue;
 			}
 
@@ -503,6 +504,45 @@ abstract class WP_REST_Controller {
 		}
 
 		return $schema['title'];
+	}
+
+	/**
+	 * Gets an array of fields to be included on the response.
+	 *
+	 * Included fields are based on item schema and `_fields=` request argument.
+	 *
+	 * @since 4.9.6
+	 *
+	 * @param WP_REST_Request $request Full details about the request.
+	 * @return array Fields to be included in the response.
+	 */
+	public function get_fields_for_response( $request ) {
+		$schema = $this->get_item_schema();
+		$fields = isset( $schema['properties'] ) ? array_keys( $schema['properties'] ) : array();
+
+		$additional_fields = $this->get_additional_fields();
+		foreach ( $additional_fields as $field_name => $field_options ) {
+			// For back-compat, include any field with an empty schema
+			// because it won't be present in $this->get_item_schema().
+			if ( is_null( $field_options['schema'] ) ) {
+				$fields[] = $field_name;
+			}
+		}
+
+		if ( ! isset( $request['_fields'] ) ) {
+			return $fields;
+		}
+		$requested_fields = is_array( $request['_fields'] ) ? $request['_fields'] : preg_split( '/[\s,]+/', $request['_fields'] );
+		if ( 0 === count( $requested_fields ) ) {
+			return $fields;
+		}
+		// Trim off outside whitespace from the comma delimited list.
+		$requested_fields = array_map( 'trim', $requested_fields );
+		// Always persist 'id', because it can be needed for add_additional_fields_to_object().
+		if ( in_array( 'id', $fields, true ) ) {
+			$requested_fields[] = 'id';
+		}
+		return array_intersect( $fields, $requested_fields );
 	}
 
 	/**

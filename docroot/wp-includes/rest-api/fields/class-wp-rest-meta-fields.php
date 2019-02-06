@@ -25,6 +25,17 @@ abstract class WP_REST_Meta_Fields {
 	abstract protected function get_meta_type();
 
 	/**
+	 * Retrieves the object meta subtype.
+	 *
+	 * @since 4.9.8
+	 *
+	 * @return string Subtype for the meta type, or empty string if no specific subtype.
+	 */
+	protected function get_meta_subtype() {
+		return '';
+	}
+
+	/**
 	 * Retrieves the object type for register_rest_field().
 	 *
 	 * @since 4.7.0
@@ -284,19 +295,17 @@ abstract class WP_REST_Meta_Fields {
 			);
 		}
 
-		$meta_key   = wp_slash( $meta_key );
-		$meta_value = wp_slash( $value );
-
 		// Do the exact same check for a duplicate value as in update_metadata() to avoid update_metadata() returning false.
 		$old_value = get_metadata( $meta_type, $object_id, $meta_key );
+		$subtype   = get_object_subtype( $meta_type, $object_id );
 
 		if ( 1 === count( $old_value ) ) {
-			if ( $old_value[0] === $meta_value ) {
+			if ( (string) sanitize_meta( $meta_key, $value, $meta_type, $subtype ) === $old_value[0] ) {
 				return true;
 			}
 		}
 
-		if ( ! update_metadata( $meta_type, $object_id, $meta_key, $meta_value ) ) {
+		if ( ! update_metadata( $meta_type, $object_id, wp_slash( $meta_key ), wp_slash( $value ) ) ) {
 			return new WP_Error(
 				'rest_meta_database_error',
 				__( 'Could not update meta value in database.' ),
@@ -317,7 +326,15 @@ abstract class WP_REST_Meta_Fields {
 	protected function get_registered_fields() {
 		$registered = array();
 
-		foreach ( get_registered_meta_keys( $this->get_meta_type() ) as $name => $args ) {
+		$meta_type    = $this->get_meta_type();
+		$meta_subtype = $this->get_meta_subtype();
+
+		$meta_keys = get_registered_meta_keys( $meta_type );
+		if ( ! empty( $meta_subtype ) ) {
+			$meta_keys = array_merge( $meta_keys, get_registered_meta_keys( $meta_type, $meta_subtype ) );
+		}
+
+		foreach ( $meta_keys as $name => $args ) {
 			if ( empty( $args['show_in_rest'] ) ) {
 				continue;
 			}
