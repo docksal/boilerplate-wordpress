@@ -1,20 +1,11 @@
 #!/usr/bin/env bash
 
-## Initialize a Docksal powered Wordpress site
+## Initialize stack and site (full reset)
 ##
 ## Usage: fin init
 
 # Abort if anything fails
 set -e
-
-#-------------------------- Settings --------------------------------
-
-# PROJECT_ROOT is passed from fin.
-# The following variables are configured in the '.env' file: DOCROOT, VIRTUAL_HOST.
-
-DOCROOT_PATH="${PROJECT_ROOT}/${DOCROOT}"
-
-#-------------------------- END: Settings --------------------------------
 
 #-------------------------- Helper functions --------------------------------
 
@@ -30,78 +21,15 @@ echo-green () { echo -e "${green}$1${NC}"; }
 echo-green-bg () { echo -e "${green_bg}$1${NC}"; }
 echo-yellow () { echo -e "${yellow}$1${NC}"; }
 
-is_windows ()
-{
-	local res=$(uname | grep 'CYGWIN_NT')
-	if [[ "$res" != "" ]]; then
-		return 0
-	else
-		return 1
-	fi
-}
-
-#-------------------------- END: Helper functions --------------------------------
-
-#-------------------------- Functions --------------------------------
-
-# Generate wp-config.php file
-generate_config ()
-{
-	cd $DOCROOT_PATH
-
-	fin exec "rm -f wp-config.php"
-	fin exec "wp core config --dbname=${MYSQL_DATABASE} --dbuser=${MYSQL_USER} --dbpass=${MYSQL_PASSWORD} --dbhost=db"
-}
-
-# Install site
-site_install ()
-{
-	cd $DOCROOT_PATH
-
-	fin exec "wp core install \
-		--url=${VIRTUAL_HOST} \
-		--title='My WordPress Site' \
-		--admin_user=${WP_ADMIN_USER} \
-		--admin_password=${WP_ADMIN_PASS} \
-		--admin_email=${WP_ADMIN_EMAIL}"
-}
-
-#-------------------------- END: Functions --------------------------------
-
 #-------------------------- Execution --------------------------------
 
-if [[ "$PROJECT_ROOT" == "" ]]; then
-	echo-red "\$PROJECT_ROOT is not set"
-	exit 1
-fi
+# Stack initialization
+echo -e "${green_bg} Step 1 ${NC}${green} Initializing stack...${NC}"
+fin project reset -f
 
-if [[ $DOCKER_RUNNING == "true" ]]; then
-	echo -e "${green_bg} Step 1 ${NC}${green} Recreating services...${NC}"
-	fin reset -f
-else
-	echo -e "${green_bg} Step 1 ${NC}${green} Creating services...${NC}"
-	fin up
-fi
-
-echo "Waiting 10s for MySQL to initialize...";
-sleep 10
-
-# Project initialization steps
-echo -e "${green_bg} Step 2 ${NC}${green} Generating wp-config.php...${NC}"
-generate_config
-
-echo -e "${green_bg} Step 3 ${NC}${green} Installing site...${NC}"
-time site_install
-
-
-if is_windows; then
-	echo-green "Add ${VIRTUAL_HOST} to your hosts file (/etc/hosts), e.g.:"
-	echo-green "192.168.64.100  ${VIRTUAL_HOST}"
-	echo
-fi
-
-echo -en "${green_bg} DONE! ${NC} "
-echo -e "Open ${yellow}http://${VIRTUAL_HOST}${NC} in your browser to verify the setup."
-echo -e "Admin panel: ${yellow}http://${VIRTUAL_HOST}/wp-admin${NC}. User/password: ${yellow}${WP_ADMIN_USER}/${WP_ADMIN_PASS}${NC}  "
+# Site initialization
+echo -e "${green_bg} Step 2 ${NC}${green} Initializing site...${NC}"
+# This runs inside cli using http://docs.docksal.io/en/v1.4.0/fin/custom-commands/#executing-commands-inside-cli
+fin init-site
 
 #-------------------------- END: Execution --------------------------------

@@ -1,1 +1,13 @@
 version: "2.1"
+
+services:
+  cli:
+    environment:
+      # Pass additional variables (used in custom commands, e.g. init-site) from host to cli
+      - MYSQL_ROOT_PASSWORD
+      - MYSQL_USER
+      - MYSQL_PASSWORD
+      - MYSQL_DATABASE
+      - WP_ADMIN_USER
+      - WP_ADMIN_PASS
+      - WP_ADMIN_EMAIL
