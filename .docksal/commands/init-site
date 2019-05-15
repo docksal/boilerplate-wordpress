@@ -21,7 +21,7 @@ DOCROOT_PATH="${PROJECT_ROOT}/${DOCROOT}"
 # Console colors
 red='\033[0;31m'
 green='\033[0;32m'
-green_bg='\033[42m'
+green_bg='\033[1;97;42m'
 yellow='\033[1;33m'
 NC='\033[0m'
 
@@ -68,7 +68,6 @@ generate_config
 echo -e "${green_bg} Step 3 ${NC}${green} Installing site...${NC}"
 time site_install
 
-echo -en "${green_bg} DONE! ${NC} "
 echo -e "Open ${yellow}http://${VIRTUAL_HOST}${NC} in your browser to verify the setup."
 echo -e "Admin panel: ${yellow}http://${VIRTUAL_HOST}/wp-admin${NC}. User/password: ${yellow}${WP_ADMIN_USER}/${WP_ADMIN_PASS}${NC}  "
 
