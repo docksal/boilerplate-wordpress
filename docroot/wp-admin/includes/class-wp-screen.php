@@ -202,7 +202,8 @@ final class WP_Screen {
 			return $hook_name;
 		}
 
-		$post_type       = $taxonomy = null;
+		$post_type       = null;
+		$taxonomy        = null;
 		$in_admin        = false;
 		$action          = '';
 		$is_block_editor = false;
@@ -391,7 +392,7 @@ final class WP_Screen {
 	 * @see set_current_screen()
 	 * @since 3.3.0
 	 *
-	 * @global WP_Screen $current_screen
+	 * @global WP_Screen $current_screen WordPress current screen object.
 	 * @global string    $taxnow
 	 * @global string    $typenow
 	 */
@@ -927,16 +928,16 @@ final class WP_Screen {
 		}
 		?>
 		<div id="screen-meta-links">
-		<?php if ( $this->get_help_tabs() ) : ?>
-			<div id="contextual-help-link-wrap" class="hide-if-no-js screen-meta-toggle">
-			<button type="button" id="contextual-help-link" class="button show-settings" aria-controls="contextual-help-wrap" aria-expanded="false"><?php _e( 'Help' ); ?></button>
+		<?php if ( $this->show_screen_options() ) : ?>
+			<div id="screen-options-link-wrap" class="hide-if-no-js screen-meta-toggle">
+			<button type="button" id="show-settings-link" class="button show-settings" aria-controls="screen-options-wrap" aria-expanded="false"><?php _e( 'Screen Options' ); ?></button>
 			</div>
 			<?php
 		endif;
-		if ( $this->show_screen_options() ) :
+		if ( $this->get_help_tabs() ) :
 			?>
-			<div id="screen-options-link-wrap" class="hide-if-no-js screen-meta-toggle">
-			<button type="button" id="show-settings-link" class="button show-settings" aria-controls="screen-options-wrap" aria-expanded="false"><?php _e( 'Screen Options' ); ?></button>
+			<div id="contextual-help-link-wrap" class="hide-if-no-js screen-meta-toggle">
+			<button type="button" id="contextual-help-link" class="button show-settings" aria-controls="contextual-help-wrap" aria-expanded="false"><?php _e( 'Help' ); ?></button>
 			</div>
 		<?php endif; ?>
 		</div>
@@ -1015,7 +1016,10 @@ final class WP_Screen {
 			)
 		);
 
-		$wrapper_start = $wrapper_end = $form_start = $form_end = '';
+		$wrapper_start = '';
+		$wrapper_end   = '';
+		$form_start    = '';
+		$form_end      = '';
 
 		// Output optional wrapper.
 		if ( $options['wrap'] ) {
@@ -1158,17 +1162,18 @@ final class WP_Screen {
 		?>
 		<fieldset class='columns-prefs'>
 		<legend class="screen-layout"><?php _e( 'Layout' ); ?></legend>
-												<?php
-												for ( $i = 1; $i <= $num; ++$i ) :
-													?>
-													<label class="columns-prefs-<?php echo $i; ?>">
-				<input type='radio' name='screen_columns' value='<?php echo esc_attr( $i ); ?>'
-													<?php checked( $screen_layout_columns, $i ); ?> />
-													<?php printf( _n( '%s column', '%s columns', $i ), number_format_i18n( $i ) ); ?>
-				</label>
-													<?php
-			endfor;
-												?>
+		<?php for ( $i = 1; $i <= $num; ++$i ) : ?>
+			<label class="columns-prefs-<?php echo $i; ?>">
+			<input type='radio' name='screen_columns' value='<?php echo esc_attr( $i ); ?>' <?php checked( $screen_layout_columns, $i ); ?> />
+			<?php
+				printf(
+					/* translators: %s: Number of columns on the page. */
+					_n( '%s column', '%s columns', $i ),
+					number_format_i18n( $i )
+				);
+			?>
+			</label>
+		<?php endfor; ?>
 		</fieldset>
 		<?php
 	}
