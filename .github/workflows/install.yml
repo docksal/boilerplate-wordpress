@@ -1,0 +1,29 @@
+name: Install boilerplate
+
+on: [push]
+
+env:
+  DOCKSAL_SSH_AGENT_USE_HOST: 0
+  DOCKSAL_DNS_DISABLED: 1
+  DOCKSAL_DNS_DOMAIN: docksal.site
+
+jobs:
+  install:
+    name: Verify boilerplate installs
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Install Docksal
+        env:
+          DOCKSAL_VERSION: ${{ steps.use_branch.outputs.branch }}
+        # This installs Docksal using the passed DOCKSAL_VERSION value
+        run: curl -fsSL https://get.docksal.io | bash
+      - name: fin sysinfo
+        run: fin sysinfo
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install boilerplate
+        run: fin init
+      - name: Test boilerplate
+        run: fin test
+      - name: fin config
+        run: fin config
