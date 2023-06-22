@@ -7,12 +7,13 @@
  */
 
 /** WordPress Administration Bootstrap */
-require_once( dirname( __FILE__ ) . '/admin.php' );
+require_once __DIR__ . '/admin.php';
 
 if ( ! current_user_can( 'manage_options' ) ) {
 	wp_die( __( 'Sorry, you are not allowed to manage options for this site.' ) );
 }
 
+// Used in the HTML title tag.
 $title       = __( 'Writing Settings' );
 $parent_file = 'options-general.php';
 
@@ -49,11 +50,11 @@ if ( apply_filters( 'enable_update_services_configuration', true ) ) {
 
 get_current_screen()->set_help_sidebar(
 	'<p><strong>' . __( 'For more information:' ) . '</strong></p>' .
-	'<p>' . __( '<a href="https://wordpress.org/support/article/settings-writing-screen/">Documentation on Writing Settings</a>' ) . '</p>' .
-	'<p>' . __( '<a href="https://wordpress.org/support/">Support</a>' ) . '</p>'
+	'<p>' . __( '<a href="https://wordpress.org/documentation/article/settings-writing-screen/">Documentation on Writing Settings</a>' ) . '</p>' .
+	'<p>' . __( '<a href="https://wordpress.org/support/forums/">Support forums</a>' ) . '</p>'
 );
 
-include( ABSPATH . 'wp-admin/admin-header.php' );
+require_once ABSPATH . 'wp-admin/admin-header.php';
 ?>
 
 <div class="wrap">
@@ -66,7 +67,12 @@ include( ABSPATH . 'wp-admin/admin-header.php' );
 <?php if ( get_site_option( 'initial_db_version' ) < 32453 ) : ?>
 <tr>
 <th scope="row"><?php _e( 'Formatting' ); ?></th>
-<td><fieldset><legend class="screen-reader-text"><span><?php _e( 'Formatting' ); ?></span></legend>
+<td><fieldset><legend class="screen-reader-text"><span>
+	<?php
+	/* translators: Hidden accessibility text. */
+	_e( 'Formatting' );
+	?>
+</span></legend>
 <label for="use_smilies">
 <input name="use_smilies" type="checkbox" id="use_smilies" value="1" <?php checked( '1', get_option( 'use_smilies' ) ); ?> />
 	<?php _e( 'Convert emoticons like <code>:-)</code> and <code>:-P</code> to graphics on display' ); ?></label><br />
@@ -142,7 +148,7 @@ if ( apply_filters( 'enable_post_by_email_configuration', true ) ) {
 	<?php
 	printf(
 		/* translators: 1, 2, 3: Examples of random email addresses. */
-		__( 'To post to WordPress by email you must set up a secret email account with POP3 access. Any mail received at this address will be posted, so it&#8217;s a good idea to keep this address very secret. Here are three random strings you could use: %1$s, %2$s, %3$s.' ),
+		__( 'To post to WordPress by email, you must set up a secret email account with POP3 access. Any mail received at this address will be posted, so it&#8217;s a good idea to keep this address very secret. Here are three random strings you could use: %1$s, %2$s, %3$s.' ),
 		sprintf( '<kbd>%s</kbd>', wp_generate_password( 8, false ) ),
 		sprintf( '<kbd>%s</kbd>', wp_generate_password( 8, false ) ),
 		sprintf( '<kbd>%s</kbd>', wp_generate_password( 8, false ) )
@@ -205,9 +211,9 @@ if ( apply_filters( 'enable_update_services_configuration', true ) ) {
 	<p><label for="ping_sites">
 		<?php
 		printf(
-			/* translators: %s: Codex URL. */
-			__( 'When you publish a new post, WordPress automatically notifies the following site update services. For more about this, see <a href="%s">Update Services</a> on the Codex. Separate multiple service URLs with line breaks.' ),
-			__( 'https://codex.wordpress.org/Update_Services' )
+			/* translators: %s: Documentation URL. */
+			__( 'When you publish a new post, WordPress automatically notifies the following site update services. For more about this, see the <a href="%s">Update Services</a> documentation article. Separate multiple service URLs with line breaks.' ),
+			__( 'https://wordpress.org/documentation/article/update-services/' )
 		);
 		?>
 	</label></p>
@@ -219,9 +225,9 @@ if ( apply_filters( 'enable_update_services_configuration', true ) ) {
 	<p>
 		<?php
 		printf(
-			/* translators: 1: Codex URL, 2: URL to Reading Settings screen. */
+			/* translators: 1: Documentation URL, 2: URL to Reading Settings screen. */
 			__( 'WordPress is not notifying any <a href="%1$s">Update Services</a> because of your site&#8217;s <a href="%2$s">visibility settings</a>.' ),
-			__( 'https://codex.wordpress.org/Update_Services' ),
+			__( 'https://wordpress.org/documentation/article/update-services/' ),
 			'options-reading.php'
 		);
 		?>
@@ -236,4 +242,4 @@ if ( apply_filters( 'enable_update_services_configuration', true ) ) {
 </form>
 </div>
 
-<?php include( ABSPATH . 'wp-admin/admin-footer.php' ); ?>
+<?php require_once ABSPATH . 'wp-admin/admin-footer.php'; ?>

@@ -27,7 +27,7 @@ class WP_REST_Settings_Controller extends WP_REST_Controller {
 	}
 
 	/**
-	 * Registers the routes for the objects of the controller.
+	 * Registers the routes for the site's settings.
 	 *
 	 * @since 4.7.0
 	 *
@@ -131,6 +131,7 @@ class WP_REST_Settings_Controller extends WP_REST_Controller {
 		if ( is_wp_error( rest_validate_value_from_schema( $value, $schema ) ) ) {
 			return null;
 		}
+
 		return rest_sanitize_value_from_schema( $value, $schema );
 	}
 
@@ -153,7 +154,7 @@ class WP_REST_Settings_Controller extends WP_REST_Controller {
 			}
 
 			/**
-			 * Filters whether to preempt a setting value update.
+			 * Filters whether to preempt a setting value update via the REST API.
 			 *
 			 * Allows hijacking the setting update logic and overriding the built-in behavior by
 			 * returning true.
@@ -250,14 +251,14 @@ class WP_REST_Settings_Controller extends WP_REST_Controller {
 			}
 
 			/*
-			 * Whitelist the supported types for settings, as we don't want invalid types
+			 * Allow the supported types for settings, as we don't want invalid types
 			 * to be updated with arbitrary values that we can't do decent sanitizing for.
 			 */
 			if ( ! in_array( $rest_args['schema']['type'], array( 'number', 'integer', 'string', 'boolean', 'array', 'object' ), true ) ) {
 				continue;
 			}
 
-			$rest_args['schema'] = $this->set_additional_properties_to_false( $rest_args['schema'] );
+			$rest_args['schema'] = rest_default_additional_properties_to_false( $rest_args['schema'] );
 
 			$rest_options[ $rest_args['name'] ] = $rest_args;
 		}
@@ -294,6 +295,7 @@ class WP_REST_Settings_Controller extends WP_REST_Controller {
 		}
 
 		$this->schema = $schema;
+
 		return $this->add_additional_fields_schema( $this->schema );
 	}
 
@@ -302,7 +304,7 @@ class WP_REST_Settings_Controller extends WP_REST_Controller {
 	 *
 	 * By default, the schema of settings will throw an error if a value is set to
 	 * `null` as it's not a valid value for something like "type => string". We
-	 * provide a wrapper sanitizer to whitelist the use of `null`.
+	 * provide a wrapper sanitizer to allow the use of `null`.
 	 *
 	 * @since 4.7.0
 	 *
@@ -315,34 +317,27 @@ class WP_REST_Settings_Controller extends WP_REST_Controller {
 		if ( is_null( $value ) ) {
 			return $value;
 		}
+
 		return rest_parse_request_arg( $value, $request, $param );
 	}
 
 	/**
-	 * Recursively add additionalProperties = false to all objects in a schema.
+	 * Recursively add additionalProperties = false to all objects in a schema
+	 * if no additionalProperties setting is specified.
 	 *
-	 * This is need to restrict properties of objects in settings values to only
+	 * This is needed to restrict properties of objects in settings values to only
 	 * registered items, as the REST API will allow additional properties by
 	 * default.
 	 *
 	 * @since 4.9.0
+	 * @deprecated 6.1.0 Use {@see rest_default_additional_properties_to_false()} instead.
 	 *
 	 * @param array $schema The schema array.
 	 * @return array
 	 */
 	protected function set_additional_properties_to_false( $schema ) {
-		switch ( $schema['type'] ) {
-			case 'object':
-				foreach ( $schema['properties'] as $key => $child_schema ) {
-					$schema['properties'][ $key ] = $this->set_additional_properties_to_false( $child_schema );
-				}
-				$schema['additionalProperties'] = false;
-				break;
-			case 'array':
-				$schema['items'] = $this->set_additional_properties_to_false( $schema['items'] );
-				break;
-		}
+		_deprecated_function( __METHOD__, '6.1.0', 'rest_default_additional_properties_to_false()' );
 
-		return $schema;
+		return rest_default_additional_properties_to_false( $schema );
 	}
 }

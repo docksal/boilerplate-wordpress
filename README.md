@@ -24,5 +24,5 @@ Features:
 1. Point your browser to
 
     ```
-    http://wordpress.docksal
+    http://wordpress.docksal.site
     ```

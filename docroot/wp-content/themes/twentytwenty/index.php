@@ -11,13 +11,13 @@
  *
  * @package WordPress
  * @subpackage Twenty_Twenty
- * @since 1.0.0
+ * @since Twenty Twenty 1.0
  */
 
 get_header();
 ?>
 
-<main id="site-content" role="main">
+<main id="site-content">
 
 	<?php
 
@@ -25,6 +25,9 @@ get_header();
 	$archive_subtitle = '';
 
 	if ( is_search() ) {
+		/**
+		 * @global WP_Query $wp_query WordPress Query object.
+		 */
 		global $wp_query;
 
 		$archive_title = sprintf(
@@ -35,7 +38,7 @@ get_header();
 
 		if ( $wp_query->found_posts ) {
 			$archive_subtitle = sprintf(
-				/* translators: %s: Number of search results */
+				/* translators: %s: Number of search results. */
 				_n(
 					'We found %s result for your search.',
 					'We found %s results for your search.',
@@ -47,6 +50,8 @@ get_header();
 		} else {
 			$archive_subtitle = __( 'We could not find any results for your search. You can give it another try through the search form below.', 'twentytwenty' );
 		}
+	} elseif ( is_archive() && ! have_posts() ) {
+		$archive_title = __( 'Nothing Found', 'twentytwenty' );
 	} elseif ( ! is_home() ) {
 		$archive_title    = get_the_archive_title();
 		$archive_subtitle = get_the_archive_description();
@@ -96,7 +101,7 @@ get_header();
 			<?php
 			get_search_form(
 				array(
-					'label' => __( 'search again', 'twentytwenty' ),
+					'aria_label' => __( 'search again', 'twentytwenty' ),
 				)
 			);
 			?>

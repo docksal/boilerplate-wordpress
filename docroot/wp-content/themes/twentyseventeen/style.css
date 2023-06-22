@@ -4,11 +4,14 @@ Theme URI: https://wordpress.org/themes/twentyseventeen/
 Author: the WordPress team
 Author URI: https://wordpress.org/
 Description: Twenty Seventeen brings your site to life with header video and immersive featured images. With a focus on business sites, it features multiple sections on the front page as well as widgets, navigation and social menus, a logo, and more. Personalize its asymmetrical grid with a custom color scheme and showcase your multimedia content with post formats. Our default theme for 2017 works great in many languages, for any abilities, and on any device.
-Version: 2.2
+Version: 3.2
+Tested up to: 6.2
+Requires at least: 4.7
+Requires PHP: 5.2.4
 License: GNU General Public License v2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Text Domain: twentyseventeen
-Tags: one-column, two-columns, right-sidebar, flexible-header, accessibility-ready, custom-colors, custom-header, custom-menu, custom-logo, editor-style, featured-images, footer-widgets, post-formats, rtl-language-support, sticky-post, theme-options, threaded-comments, translation-ready
+Tags: one-column, two-columns, right-sidebar, flexible-header, accessibility-ready, custom-colors, custom-header, custom-menu, custom-logo, editor-style, featured-images, footer-widgets, post-formats, rtl-language-support, sticky-post, theme-options, threaded-comments, translation-ready, block-patterns
 
 This theme, like WordPress, is licensed under the GPL.
 Use it to make something cool, have fun, and share what you've learned with others.
@@ -594,11 +597,11 @@ html[lang="azb"] button,
 html[lang="azb"] input,
 html[lang="azb"] select,
 html[lang="azb"] textarea,
-html[lang="fa-IR"] body,
-html[lang="fa-IR"] button,
-html[lang="fa-IR"] input,
-html[lang="fa-IR"] select,
-html[lang="fa-IR"] textarea,
+html[lang^="fa-"] body,
+html[lang^="fa-"] button,
+html[lang^="fa-"] input,
+html[lang^="fa-"] select,
+html[lang^="fa-"] textarea,
 html[lang="haz"] body,
 html[lang="haz"] button,
 html[lang="haz"] input,
@@ -635,12 +638,12 @@ html[lang="azb"] h3,
 html[lang="azb"] h4,
 html[lang="azb"] h5,
 html[lang="azb"] h6,
-html[lang="fa-IR"] h1,
-html[lang="fa-IR"] h2,
-html[lang="fa-IR"] h3,
-html[lang="fa-IR"] h4,
-html[lang="fa-IR"] h5,
-html[lang="fa-IR"] h6,
+html[lang^="fa-"] h1,
+html[lang^="fa-"] h2,
+html[lang^="fa-"] h3,
+html[lang^="fa-"] h4,
+html[lang^="fa-"] h5,
+html[lang^="fa-"] h6,
 html[lang="haz"] h1,
 html[lang="haz"] h2,
 html[lang="haz"] h3,
@@ -894,8 +897,10 @@ html[lang="th"] textarea {
 html[lang="ar"] *,
 html[lang="ary"] *,
 html[lang="azb"] *,
+html[lang^="fa-"] *,
 html[lang="haz"] *,
 html[lang="ps"] *,
+html[lang="ur"] *,
 html[lang^="zh-"] *,
 html[lang="bg-BG"] *,
 html[lang="ru-RU"] *,
@@ -1034,8 +1039,8 @@ input[type="submit"].secondary {
 	color: #222;
 }
 
-button:hover:not( .mejs-container > button ),
-button:focus,
+:not( .mejs-button ) > button:hover,
+:not( .mejs-button ) > button:focus,
 input[type="button"]:hover,
 input[type="button"]:focus,
 input[type="submit"]:hover,
@@ -1150,6 +1155,8 @@ td {
 	padding: 0.4em;
 }
 
+th,
+td,
 th:first-child,
 td:first-child {
 	padding-left: 0;
@@ -2658,7 +2665,7 @@ h2.widget-title {
 
 /* RSS Widget */
 
-.widget_rss .widget-title .rsswidget:first-child {
+.widget_rss .widget-title .rsswidget:first-child:not(.rss-widget-title) {
 	float: right;
 }
 
@@ -2802,8 +2809,29 @@ h2.widget-title {
 
 /* Calendar widget */
 
+.widget_calendar .wp-calendar-table {
+	margin-bottom: 0;
+}
+
+.widget_calendar .wp-calendar-nav {
+	display: table;
+	width: 100%;
+	margin: 0 0 1.5em;
+	padding: 0.4em 0;
+}
+
+.widget_calendar .wp-calendar-nav span {
+	display: table-cell;
+}
+
+.widget_calendar .wp-calendar-nav-prev,
+.widget_calendar .wp-calendar-nav-next {
+	width: 40%;
+}
+
 .widget_calendar th,
-.widget_calendar td {
+.widget_calendar td,
+.widget_calendar .wp-calendar-nav span {
 	text-align: center;
 }
 
@@ -2844,6 +2872,11 @@ img.alignright {
 	margin-bottom: 0;
 	margin-top: 0;
 	padding: 0;
+}
+
+audio:focus,
+video:focus {
+	outline: thin dotted;
 }
 
 /* Make sure embeds and iframes fit their containers. */
@@ -3352,6 +3385,9 @@ p > object:only-child {
 }
 
 @media screen and (min-width: 48em) {
+	html {
+		scroll-padding-top: calc( var(--wp-admin--admin-bar--height, 0px) + 72px );
+	}
 
 	/* Typography */
 
@@ -3499,7 +3535,7 @@ p > object:only-child {
 		right: 0;
 		top: 0;
 		width: 100%;
-		z-index: 7;
+		z-index: 1000;
 	}
 
 	.admin-bar .site-navigation-fixed.navigation-top {
@@ -3762,6 +3798,13 @@ p > object:only-child {
 		background-attachment: fixed;
 	}
 
+	@supports ( -webkit-touch-callout: none ) {
+		/* Image scrolls with the content in iOS Safari. */
+		.background-fixed .panel-image {
+			background-attachment: scroll;
+		}
+	}
+
 	.page-two-column .panel-content .entry-header {
 		float: left;
 		width: 36%;
@@ -3792,7 +3835,7 @@ p > object:only-child {
 		width: 100%;
 	}
 
-	.panel-content .recent-posts .entry-header {
+	.twentyseventeen-front-page .panel-content .recent-posts .entry-header {
 		margin-bottom: 1.5em;
 	}
 

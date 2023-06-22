@@ -13,7 +13,7 @@
 define( 'WP_INSTALLING_NETWORK', true );
 
 /** WordPress Administration Bootstrap */
-require_once( dirname( __FILE__ ) . '/admin.php' );
+require_once __DIR__ . '/admin.php';
 
 if ( ! current_user_can( 'setup_network' ) ) {
 	wp_die( __( 'Sorry, you are not allowed to manage options for this site.' ) );
@@ -30,7 +30,7 @@ if ( is_multisite() ) {
 	}
 }
 
-require_once( dirname( __FILE__ ) . '/includes/network.php' );
+require_once __DIR__ . '/includes/network.php';
 
 // We need to create references to ms global tables to enable Network.
 foreach ( $wpdb->tables( 'ms_global' ) as $table => $prefixed_table ) {
@@ -49,9 +49,11 @@ if ( ! network_domain_check() && ( ! defined( 'WP_ALLOW_MULTISITE' ) || ! WP_ALL
 }
 
 if ( is_network_admin() ) {
+	// Used in the HTML title tag.
 	$title       = __( 'Network Setup' );
 	$parent_file = 'settings.php';
 } else {
+	// Used in the HTML title tag.
 	$title       = __( 'Create a Network of WordPress Sites' );
 	$parent_file = 'tools.php';
 }
@@ -63,8 +65,8 @@ $network_help = '<p>' . __( 'This screen allows you to configure a network as ha
 	'<p>' . __( 'Once you add this code and refresh your browser, multisite should be enabled. This screen, now in the Network Admin navigation menu, will keep an archive of the added code. You can toggle between Network Admin and Site Admin by clicking on the Network Admin or an individual site name under the My Sites dropdown in the Toolbar.' ) . '</p>' .
 	'<p>' . __( 'The choice of subdirectory sites is disabled if this setup is more than a month old because of permalink problems with &#8220;/blog/&#8221; from the main site. This disabling will be addressed in a future version.' ) . '</p>' .
 	'<p><strong>' . __( 'For more information:' ) . '</strong></p>' .
-	'<p>' . __( '<a href="https://wordpress.org/support/article/create-a-network/">Documentation on Creating a Network</a>' ) . '</p>' .
-	'<p>' . __( '<a href="https://wordpress.org/support/article/tools-network-screen/">Documentation on the Network Screen</a>' ) . '</p>';
+	'<p>' . __( '<a href="https://wordpress.org/documentation/article/create-a-network/">Documentation on Creating a Network</a>' ) . '</p>' .
+	'<p>' . __( '<a href="https://wordpress.org/documentation/article/tools-network-screen/">Documentation on the Network Screen</a>' ) . '</p>';
 
 get_current_screen()->add_help_tab(
 	array(
@@ -76,12 +78,12 @@ get_current_screen()->add_help_tab(
 
 get_current_screen()->set_help_sidebar(
 	'<p><strong>' . __( 'For more information:' ) . '</strong></p>' .
-	'<p>' . __( '<a href="https://wordpress.org/support/article/create-a-network/">Documentation on Creating a Network</a>' ) . '</p>' .
-	'<p>' . __( '<a href="https://wordpress.org/support/article/tools-network-screen/">Documentation on the Network Screen</a>' ) . '</p>' .
-	'<p>' . __( '<a href="https://wordpress.org/support/">Support</a>' ) . '</p>'
+	'<p>' . __( '<a href="https://wordpress.org/documentation/article/create-a-network/">Documentation on Creating a Network</a>' ) . '</p>' .
+	'<p>' . __( '<a href="https://wordpress.org/documentation/article/tools-network-screen/">Documentation on the Network Screen</a>' ) . '</p>' .
+	'<p>' . __( '<a href="https://wordpress.org/support/forums/">Support forums</a>' ) . '</p>'
 );
 
-include( ABSPATH . 'wp-admin/admin-header.php' );
+require_once ABSPATH . 'wp-admin/admin-header.php';
 ?>
 <div class="wrap">
 <h1><?php echo esc_html( $title ); ?></h1>
@@ -91,7 +93,7 @@ if ( $_POST ) {
 
 	check_admin_referer( 'install-network-1' );
 
-	require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+	require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 	// Create network tables.
 	install_network();
 	$base              = parse_url( trailingslashit( get_option( 'home' ) ), PHP_URL_PATH );
@@ -99,7 +101,7 @@ if ( $_POST ) {
 	if ( ! network_domain_check() ) {
 		$result = populate_network( 1, get_clean_basedomain(), sanitize_email( $_POST['email'] ), wp_unslash( $_POST['sitename'] ), $base, $subdomain_install );
 		if ( is_wp_error( $result ) ) {
-			if ( 1 == count( $result->get_error_codes() ) && 'no_wildcard_dns' == $result->get_error_code() ) {
+			if ( 1 === count( $result->get_error_codes() ) && 'no_wildcard_dns' === $result->get_error_code() ) {
 				network_step2( $result );
 			} else {
 				network_step1( $result );
@@ -118,4 +120,4 @@ if ( $_POST ) {
 ?>
 </div>
 
-<?php include( ABSPATH . 'wp-admin/admin-footer.php' ); ?>
+<?php require_once ABSPATH . 'wp-admin/admin-footer.php'; ?>

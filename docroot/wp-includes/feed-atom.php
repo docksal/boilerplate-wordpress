@@ -17,7 +17,6 @@ do_action( 'rss_tag_pre', 'atom' );
 	xmlns="http://www.w3.org/2005/Atom"
 	xmlns:thr="http://purl.org/syndication/thread/1.0"
 	xml:lang="<?php bloginfo_rss( 'language' ); ?>"
-	xml:base="<?php bloginfo_rss( 'url' ); ?>/wp-atom.php"
 	<?php
 	/**
 	 * Fires at end of the Atom feed root to add namespaces.
@@ -50,8 +49,11 @@ do_action( 'rss_tag_pre', 'atom' );
 	<entry>
 		<author>
 			<name><?php the_author(); ?></name>
-			<?php $author_url = get_the_author_meta( 'url' ); if ( ! empty( $author_url ) ) : ?>
-			<uri><?php the_author_meta( 'url' ); ?></uri>
+			<?php
+			$author_url = get_the_author_meta( 'url' );
+			if ( ! empty( $author_url ) ) :
+				?>
+				<uri><?php the_author_meta( 'url' ); ?></uri>
 				<?php
 			endif;
 
@@ -63,18 +65,24 @@ do_action( 'rss_tag_pre', 'atom' );
 			do_action( 'atom_author' );
 			?>
 		</author>
+
 		<title type="<?php html_type_rss(); ?>"><![CDATA[<?php the_title_rss(); ?>]]></title>
 		<link rel="alternate" type="<?php bloginfo_rss( 'html_type' ); ?>" href="<?php the_permalink_rss(); ?>" />
+
 		<id><?php the_guid(); ?></id>
 		<updated><?php echo get_post_modified_time( 'Y-m-d\TH:i:s\Z', true ); ?></updated>
 		<published><?php echo get_post_time( 'Y-m-d\TH:i:s\Z', true ); ?></published>
 		<?php the_category_rss( 'atom' ); ?>
+
 		<summary type="<?php html_type_rss(); ?>"><![CDATA[<?php the_excerpt_rss(); ?>]]></summary>
+
 		<?php if ( ! get_option( 'rss_use_excerpt' ) ) : ?>
-		<content type="<?php html_type_rss(); ?>" xml:base="<?php the_permalink_rss(); ?>"><![CDATA[<?php the_content_feed( 'atom' ); ?>]]></content>
+			<content type="<?php html_type_rss(); ?>" xml:base="<?php the_permalink_rss(); ?>"><![CDATA[<?php the_content_feed( 'atom' ); ?>]]></content>
 		<?php endif; ?>
+
 		<?php
 		atom_enclosure();
+
 		/**
 		 * Fires at the end of each Atom feed item.
 		 *
@@ -84,9 +92,9 @@ do_action( 'rss_tag_pre', 'atom' );
 
 		if ( get_comments_number() || comments_open() ) :
 			?>
-		<link rel="replies" type="<?php bloginfo_rss( 'html_type' ); ?>" href="<?php the_permalink_rss(); ?>#comments" thr:count="<?php echo get_comments_number(); ?>"/>
-		<link rel="replies" type="application/atom+xml" href="<?php echo esc_url( get_post_comments_feed_link( 0, 'atom' ) ); ?>" thr:count="<?php echo get_comments_number(); ?>"/>
-		<thr:total><?php echo get_comments_number(); ?></thr:total>
+			<link rel="replies" type="<?php bloginfo_rss( 'html_type' ); ?>" href="<?php the_permalink_rss(); ?>#comments" thr:count="<?php echo get_comments_number(); ?>" />
+			<link rel="replies" type="application/atom+xml" href="<?php echo esc_url( get_post_comments_feed_link( 0, 'atom' ) ); ?>" thr:count="<?php echo get_comments_number(); ?>" />
+			<thr:total><?php echo get_comments_number(); ?></thr:total>
 		<?php endif; ?>
 	</entry>
 	<?php endwhile; ?>

@@ -16,9 +16,11 @@
 		 *
 		 * @since 4.4.0
 		 *
-		 * @returns {void}
+		 * @return {void}
 		 */
 		function initialize() {
+			var selectors = [];
+
 			if ( typeof _wpmejsSettings !== 'undefined' ) {
 				settings = $.extend( true, {}, _wpmejsSettings );
 			}
@@ -54,17 +56,27 @@
 			 *
 			 * @param {object} media The wrapper that mimics all the native events/properties/methods for all renderers.
 			 * @param {object} node  The original HTML video, audio, or iframe tag where the media was loaded.
-			 * @returns {string}
+			 * @return {string}
 			 */
 			settings.customError = function ( media, node ) {
 				// Make sure we only fall back to a download link for flash files.
 				if ( -1 !== media.rendererName.indexOf( 'flash' ) || -1 !== media.rendererName.indexOf( 'flv' ) ) {
-					return '<a href="' + node.src + '">' + mejsL10n.strings['mejs.download-video'] + '</a>';
+					return '<a href="' + node.src + '">' + mejsL10n.strings['mejs.download-file'] + '</a>';
 				}
 			};
 
+			if ( 'undefined' === typeof settings.videoShortcodeLibrary || 'mediaelement' === settings.videoShortcodeLibrary ) {
+				selectors.push( '.wp-video-shortcode' );
+			}
+			if ( 'undefined' === typeof settings.audioShortcodeLibrary || 'mediaelement' === settings.audioShortcodeLibrary ) {
+				selectors.push( '.wp-audio-shortcode' );
+			}
+			if ( ! selectors.length ) {
+				return;
+			}
+
 			// Only initialize new media elements.
-			$( '.wp-audio-shortcode, .wp-video-shortcode' )
+			$( selectors.join( ', ' ) )
 				.not( '.mejs-container' )
 				.filter(function () {
 					return ! $( this ).parent().hasClass( 'mejs-mediaelement' );

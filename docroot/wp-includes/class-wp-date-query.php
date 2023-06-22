@@ -14,6 +14,7 @@
  *
  * @since 3.7.0
  */
+#[AllowDynamicProperties]
 class WP_Date_Query {
 	/**
 	 * Array of date queries.
@@ -45,7 +46,7 @@ class WP_Date_Query {
 	 * The value comparison operator. Can be changed via the query arguments.
 	 *
 	 * @since 3.7.0
-	 * @var array
+	 * @var string
 	 */
 	public $compare = '=';
 
@@ -53,7 +54,7 @@ class WP_Date_Query {
 	 * Supported time-related parameter keys.
 	 *
 	 * @since 4.1.0
-	 * @var array
+	 * @var string[]
 	 */
 	public $time_keys = array( 'after', 'before', 'year', 'month', 'monthnum', 'week', 'w', 'dayofyear', 'day', 'dayofweek', 'dayofweek_iso', 'hour', 'minute', 'second' );
 
@@ -69,19 +70,19 @@ class WP_Date_Query {
 	 * @since 4.0.0 The $inclusive logic was updated to include all times within the date range.
 	 * @since 4.1.0 Introduced 'dayofweek_iso' time type parameter.
 	 *
-	 * @param array $date_query {
+	 * @param array  $date_query {
 	 *     Array of date query clauses.
 	 *
-	 *     @type array {
+	 *     @type array ...$0 {
 	 *         @type string $column   Optional. The column to query against. If undefined, inherits the value of
-	 *                                the `$default_column` parameter. Accepts 'post_date', 'post_date_gmt',
-	 *                                'post_modified','post_modified_gmt', 'comment_date', 'comment_date_gmt'.
+	 *                                the `$default_column` parameter. See WP_Date_Query::validate_column() and
+	 *                                the {@see 'date_query_valid_columns'} filter for the list of accepted values.
 	 *                                Default 'post_date'.
 	 *         @type string $compare  Optional. The comparison operator. Accepts '=', '!=', '>', '>=', '<', '<=',
 	 *                                'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN'. Default '='.
 	 *         @type string $relation Optional. The boolean relationship between the date queries. Accepts 'OR' or 'AND'.
 	 *                                Default 'OR'.
-	 *         @type array {
+	 *         @type array  ...$0 {
 	 *             Optional. An array of first-order clause parameters, or another fully-formed date query.
 	 *
 	 *             @type string|array $before {
@@ -104,53 +105,53 @@ class WP_Date_Query {
 	 *                 @type string $day   Optional when passing array.The day of the month. Accepts numbers 1-31.
 	 *                                     Default (string:empty)|(array:last day of month).
 	 *             }
-	 *             @type string       $column        Optional. Used to add a clause comparing a column other than the
-	 *                                               column specified in the top-level `$column` parameter. Accepts
-	 *                                               'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt',
-	 *                                               'comment_date', 'comment_date_gmt'. Default is the value of
-	 *                                               top-level `$column`.
+	 *             @type string       $column        Optional. Used to add a clause comparing a column other than
+	 *                                               the column specified in the top-level `$column` parameter.
+	 *                                               See WP_Date_Query::validate_column() and
+	 *                                               the {@see 'date_query_valid_columns'} filter for the list
+	 *                                               of accepted values. Default is the value of top-level `$column`.
 	 *             @type string       $compare       Optional. The comparison operator. Accepts '=', '!=', '>', '>=',
 	 *                                               '<', '<=', 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN'. 'IN',
 	 *                                               'NOT IN', 'BETWEEN', and 'NOT BETWEEN'. Comparisons support
 	 *                                               arrays in some time-related parameters. Default '='.
 	 *             @type bool         $inclusive     Optional. Include results from dates specified in 'before' or
 	 *                                               'after'. Default false.
-	 *             @type int|array    $year          Optional. The four-digit year number. Accepts any four-digit year
+	 *             @type int|int[]    $year          Optional. The four-digit year number. Accepts any four-digit year
 	 *                                               or an array of years if `$compare` supports it. Default empty.
-	 *             @type int|array    $month         Optional. The two-digit month number. Accepts numbers 1-12 or an
+	 *             @type int|int[]    $month         Optional. The two-digit month number. Accepts numbers 1-12 or an
 	 *                                               array of valid numbers if `$compare` supports it. Default empty.
-	 *             @type int|array    $week          Optional. The week number of the year. Accepts numbers 0-53 or an
+	 *             @type int|int[]    $week          Optional. The week number of the year. Accepts numbers 0-53 or an
 	 *                                               array of valid numbers if `$compare` supports it. Default empty.
-	 *             @type int|array    $dayofyear     Optional. The day number of the year. Accepts numbers 1-366 or an
+	 *             @type int|int[]    $dayofyear     Optional. The day number of the year. Accepts numbers 1-366 or an
 	 *                                               array of valid numbers if `$compare` supports it.
-	 *             @type int|array    $day           Optional. The day of the month. Accepts numbers 1-31 or an array
+	 *             @type int|int[]    $day           Optional. The day of the month. Accepts numbers 1-31 or an array
 	 *                                               of valid numbers if `$compare` supports it. Default empty.
-	 *             @type int|array    $dayofweek     Optional. The day number of the week. Accepts numbers 1-7 (1 is
+	 *             @type int|int[]    $dayofweek     Optional. The day number of the week. Accepts numbers 1-7 (1 is
 	 *                                               Sunday) or an array of valid numbers if `$compare` supports it.
 	 *                                               Default empty.
-	 *             @type int|array    $dayofweek_iso Optional. The day number of the week (ISO). Accepts numbers 1-7
+	 *             @type int|int[]    $dayofweek_iso Optional. The day number of the week (ISO). Accepts numbers 1-7
 	 *                                               (1 is Monday) or an array of valid numbers if `$compare` supports it.
 	 *                                               Default empty.
-	 *             @type int|array    $hour          Optional. The hour of the day. Accepts numbers 0-23 or an array
+	 *             @type int|int[]    $hour          Optional. The hour of the day. Accepts numbers 0-23 or an array
 	 *                                               of valid numbers if `$compare` supports it. Default empty.
-	 *             @type int|array    $minute        Optional. The minute of the hour. Accepts numbers 0-60 or an array
+	 *             @type int|int[]    $minute        Optional. The minute of the hour. Accepts numbers 0-59 or an array
 	 *                                               of valid numbers if `$compare` supports it. Default empty.
-	 *             @type int|array    $second        Optional. The second of the minute. Accepts numbers 0-60 or an
+	 *             @type int|int[]    $second        Optional. The second of the minute. Accepts numbers 0-59 or an
 	 *                                               array of valid numbers if `$compare` supports it. Default empty.
 	 *         }
 	 *     }
 	 * }
-	 * @param string $default_column Optional. Default column to query against. Default 'post_date'.
-	 *                               Accepts 'post_date', 'post_date_gmt', 'post_modified', 'post_modified_gmt',
-	 *                               'comment_date', 'comment_date_gmt'.
+	 * @param string $default_column Optional. Default column to query against. See WP_Date_Query::validate_column()
+	 *                               and the {@see 'date_query_valid_columns'} filter for the list of accepted values.
+	 *                               Default 'post_date'.
 	 */
 	public function __construct( $date_query, $default_column = 'post_date' ) {
 		if ( empty( $date_query ) || ! is_array( $date_query ) ) {
 			return;
 		}
 
-		if ( isset( $date_query['relation'] ) && 'OR' === strtoupper( $date_query['relation'] ) ) {
-			$this->relation = 'OR';
+		if ( isset( $date_query['relation'] ) ) {
+			$this->relation = $this->sanitize_relation( $date_query['relation'] );
 		} else {
 			$this->relation = 'AND';
 		}
@@ -177,14 +178,12 @@ class WP_Date_Query {
 	 * Recursive-friendly query sanitizer.
 	 *
 	 * Ensures that each query-level clause has a 'relation' key, and that
-	 * each first-order clause contains all the necessary keys from
-	 * `$defaults`.
+	 * each first-order clause contains all the necessary keys from `$defaults`.
 	 *
 	 * @since 4.1.0
 	 *
 	 * @param array $queries
 	 * @param array $parent_query
-	 *
 	 * @return array Sanitized queries.
 	 */
 	public function sanitize_query( $queries, $parent_query = null ) {
@@ -221,6 +220,9 @@ class WP_Date_Query {
 			$this->validate_date_values( $queries );
 		}
 
+		// Sanitize the relation parameter.
+		$queries['relation'] = $this->sanitize_relation( $queries['relation'] );
+
 		foreach ( $queries as $key => $q ) {
 			if ( ! is_array( $q ) || in_array( $key, $this->time_keys, true ) ) {
 				// This is a first-order query. Trust the values and sanitize when building SQL.
@@ -235,14 +237,14 @@ class WP_Date_Query {
 	}
 
 	/**
-	 * Determine whether this is a first-order clause.
+	 * Determines whether this is a first-order clause.
 	 *
 	 * Checks to see if the current clause has any time-related keys.
 	 * If so, it's first-order.
 	 *
 	 * @since 4.1.0
 	 *
-	 * @param  array $query Query clause.
+	 * @param array $query Query clause.
 	 * @return bool True if this is a first-order clause.
 	 */
 	protected function is_first_order_clause( $query ) {
@@ -259,7 +261,9 @@ class WP_Date_Query {
 	 * @return string The comparison operator.
 	 */
 	public function get_compare( $query ) {
-		if ( ! empty( $query['compare'] ) && in_array( $query['compare'], array( '=', '!=', '>', '>=', '<', '<=', 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN' ) ) ) {
+		if ( ! empty( $query['compare'] )
+			&& in_array( $query['compare'], array( '=', '!=', '>', '>=', '<', '<=', 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN' ), true )
+		) {
 			return strtoupper( $query['compare'] );
 		}
 
@@ -273,10 +277,10 @@ class WP_Date_Query {
 	 * continue (though of course no items will be found for impossible dates).
 	 * This method only generates debug notices for these cases.
 	 *
-	 * @since  4.1.0
+	 * @since 4.1.0
 	 *
-	 * @param  array $date_query The date_query array.
-	 * @return bool  True if all values in the query are valid, false if one or more fail.
+	 * @param array $date_query The date_query array.
+	 * @return bool True if all values in the query are valid, false if one or more fail.
 	 */
 	public function validate_date_values( $date_query = array() ) {
 		if ( empty( $date_query ) ) {
@@ -315,7 +319,7 @@ class WP_Date_Query {
 
 			$max_days_of_year = gmdate( 'z', mktime( 0, 0, 0, 12, 31, $_year ) ) + 1;
 		} else {
-			// otherwise we use the max of 366 (leap-year)
+			// Otherwise we use the max of 366 (leap-year).
 			$max_days_of_year = 366;
 		}
 
@@ -462,12 +466,14 @@ class WP_Date_Query {
 	/**
 	 * Validates a column name parameter.
 	 *
-	 * Column names without a table prefix (like 'post_date') are checked against a whitelist of
-	 * known tables, and then, if found, have a table prefix (such as 'wp_posts.') prepended.
-	 * Prefixed column names (such as 'wp_posts.post_date') bypass this whitelist check,
-	 * and are only sanitized to remove illegal characters.
+	 * Column names without a table prefix (like 'post_date') are checked against a list of
+	 * allowed and known tables, and then, if found, have a table prefix (such as 'wp_posts.')
+	 * prepended. Prefixed column names (such as 'wp_posts.post_date') bypass this allowed
+	 * check, and are only sanitized to remove illegal characters.
 	 *
 	 * @since 3.7.0
+	 *
+	 * @global wpdb $wpdb WordPress database abstraction object.
 	 *
 	 * @param string $column The user-supplied column name.
 	 * @return string A validated column name value.
@@ -494,13 +500,14 @@ class WP_Date_Query {
 			 *
 			 * @since 3.7.0
 			 * @since 4.1.0 Added 'user_registered' to the default recognized columns.
+			 * @since 4.6.0 Added 'registered' and 'last_updated' to the default recognized columns.
 			 *
 			 * @param string[] $valid_columns An array of valid date query columns. Defaults
 			 *                                are 'post_date', 'post_date_gmt', 'post_modified',
 			 *                                'post_modified_gmt', 'comment_date', 'comment_date_gmt',
-			 *                                'user_registered'
+			 *                                'user_registered', 'registered', 'last_updated'.
 			 */
-			if ( ! in_array( $column, apply_filters( 'date_query_valid_columns', $valid_columns ) ) ) {
+			if ( ! in_array( $column, apply_filters( 'date_query_valid_columns', $valid_columns ), true ) ) {
 				$column = 'post_date';
 			}
 
@@ -526,7 +533,7 @@ class WP_Date_Query {
 
 			// If it's a known column name, add the appropriate table prefix.
 			foreach ( $known_columns as $table_name => $table_columns ) {
-				if ( in_array( $column, $table_columns ) ) {
+				if ( in_array( $column, $table_columns, true ) ) {
 					$column = $table_name . '.' . $column;
 					break;
 				}
@@ -538,7 +545,7 @@ class WP_Date_Query {
 	}
 
 	/**
-	 * Generate WHERE clause to be appended to a main query.
+	 * Generates WHERE clause to be appended to a main query.
 	 *
 	 * @since 3.7.0
 	 *
@@ -555,20 +562,20 @@ class WP_Date_Query {
 		 * @since 3.7.0
 		 *
 		 * @param string        $where WHERE clause of the date query.
-		 * @param WP_Date_Query $this  The WP_Date_Query instance.
+		 * @param WP_Date_Query $query The WP_Date_Query instance.
 		 */
 		return apply_filters( 'get_date_sql', $where, $this );
 	}
 
 	/**
-	 * Generate SQL clauses to be appended to a main query.
+	 * Generates SQL clauses to be appended to a main query.
 	 *
 	 * Called by the public WP_Date_Query::get_sql(), this method is abstracted
 	 * out to maintain parity with the other Query classes.
 	 *
 	 * @since 4.1.0
 	 *
-	 * @return array {
+	 * @return string[] {
 	 *     Array containing JOIN and WHERE SQL clauses to append to the main query.
 	 *
 	 *     @type string $join  SQL fragment to append to the main JOIN clause.
@@ -586,7 +593,7 @@ class WP_Date_Query {
 	}
 
 	/**
-	 * Generate SQL clauses for a single query array.
+	 * Generates SQL clauses for a single query array.
 	 *
 	 * If nested subqueries are found, this method recurses the tree to
 	 * produce the properly nested SQL.
@@ -675,10 +682,10 @@ class WP_Date_Query {
 	 * A wrapper for get_sql_for_clause(), included here for backward
 	 * compatibility while retaining the naming convention across Query classes.
 	 *
-	 * @since  3.7.0
+	 * @since 3.7.0
 	 *
-	 * @param  array $query Date query arguments.
-	 * @return array {
+	 * @param array $query Date query arguments.
+	 * @return string[] {
 	 *     Array containing JOIN and WHERE SQL clauses to append to the main query.
 	 *
 	 *     @type string $join  SQL fragment to append to the main JOIN clause.
@@ -692,11 +699,13 @@ class WP_Date_Query {
 	/**
 	 * Turns a first-order date query into SQL for a WHERE clause.
 	 *
-	 * @since  4.1.0
+	 * @since 4.1.0
 	 *
-	 * @param  array $query        Date query clause.
-	 * @param  array $parent_query Parent query of the current date query.
-	 * @return array {
+	 * @global wpdb $wpdb WordPress database abstraction object.
+	 *
+	 * @param array $query        Date query clause.
+	 * @param array $parent_query Parent query of the current date query.
+	 * @return string[] {
 	 *     Array containing JOIN and WHERE SQL clauses to append to the main query.
 	 *
 	 *     @type string $join  SQL fragment to append to the main JOIN clause.
@@ -745,7 +754,7 @@ class WP_Date_Query {
 			'WEEKDAY'        => array( 'dayofweek_iso' ),
 		);
 
-		// Check of the possible date units and add them to the query
+		// Check of the possible date units and add them to the query.
 		foreach ( $date_units as $sql_part => $query_parts ) {
 			foreach ( $query_parts as $query_part ) {
 				if ( isset( $query[ $query_part ] ) ) {
@@ -797,8 +806,8 @@ class WP_Date_Query {
 	 *
 	 * @since 3.7.0
 	 *
-	 * @param string $compare The compare operator to use
-	 * @param string|array $value The value
+	 * @param string       $compare The compare operator to use.
+	 * @param string|array $value   The value.
 	 * @return string|false|int The value to be used in SQL or false on error.
 	 */
 	public function build_value( $compare, $value ) {
@@ -822,7 +831,7 @@ class WP_Date_Query {
 
 			case 'BETWEEN':
 			case 'NOT BETWEEN':
-				if ( ! is_array( $value ) || 2 != count( $value ) ) {
+				if ( ! is_array( $value ) || 2 !== count( $value ) ) {
 					$value = array( $value, $value );
 				} else {
 					$value = array_values( $value );
@@ -857,12 +866,12 @@ class WP_Date_Query {
 	 *
 	 * @since 3.7.0
 	 *
-	 * @param string|array $datetime       An array of parameters or a strotime() string
+	 * @param string|array $datetime       An array of parameters or a strotime() string.
 	 * @param bool         $default_to_max Whether to round up incomplete dates. Supported by values
 	 *                                     of $datetime that are arrays, or string values that are a
 	 *                                     subset of MySQL date format ('Y', 'Y-m', 'Y-m-d', 'Y-m-d H:i').
 	 *                                     Default: false.
-	 * @return string|false A MySQL format date/time or false on failure
+	 * @return string|false A MySQL format date/time or false on failure.
 	 */
 	public function build_mysql_datetime( $datetime, $default_to_max = false ) {
 		if ( ! is_array( $datetime ) ) {
@@ -874,32 +883,32 @@ class WP_Date_Query {
 			if ( preg_match( '/^(\d{4})$/', $datetime, $matches ) ) {
 				// Y
 				$datetime = array(
-					'year' => intval( $matches[1] ),
+					'year' => (int) $matches[1],
 				);
 
 			} elseif ( preg_match( '/^(\d{4})\-(\d{2})$/', $datetime, $matches ) ) {
 				// Y-m
 				$datetime = array(
-					'year'  => intval( $matches[1] ),
-					'month' => intval( $matches[2] ),
+					'year'  => (int) $matches[1],
+					'month' => (int) $matches[2],
 				);
 
 			} elseif ( preg_match( '/^(\d{4})\-(\d{2})\-(\d{2})$/', $datetime, $matches ) ) {
 				// Y-m-d
 				$datetime = array(
-					'year'  => intval( $matches[1] ),
-					'month' => intval( $matches[2] ),
-					'day'   => intval( $matches[3] ),
+					'year'  => (int) $matches[1],
+					'month' => (int) $matches[2],
+					'day'   => (int) $matches[3],
 				);
 
 			} elseif ( preg_match( '/^(\d{4})\-(\d{2})\-(\d{2}) (\d{2}):(\d{2})$/', $datetime, $matches ) ) {
 				// Y-m-d H:i
 				$datetime = array(
-					'year'   => intval( $matches[1] ),
-					'month'  => intval( $matches[2] ),
-					'day'    => intval( $matches[3] ),
-					'hour'   => intval( $matches[4] ),
-					'minute' => intval( $matches[5] ),
+					'year'   => (int) $matches[1],
+					'month'  => (int) $matches[2],
+					'day'    => (int) $matches[3],
+					'hour'   => (int) $matches[4],
+					'minute' => (int) $matches[5],
 				);
 			}
 
@@ -956,23 +965,25 @@ class WP_Date_Query {
 	 *
 	 * @since 3.7.0
 	 *
-	 * @param string $column The column to query against. Needs to be pre-validated!
-	 * @param string $compare The comparison operator. Needs to be pre-validated!
-	 * @param int|null $hour Optional. An hour value (0-23).
-	 * @param int|null $minute Optional. A minute value (0-59).
-	 * @param int|null $second Optional. A second value (0-59).
+	 * @global wpdb $wpdb WordPress database abstraction object.
+	 *
+	 * @param string   $column  The column to query against. Needs to be pre-validated!
+	 * @param string   $compare The comparison operator. Needs to be pre-validated!
+	 * @param int|null $hour    Optional. An hour value (0-23).
+	 * @param int|null $minute  Optional. A minute value (0-59).
+	 * @param int|null $second  Optional. A second value (0-59).
 	 * @return string|false A query part or false on failure.
 	 */
 	public function build_time_query( $column, $compare, $hour = null, $minute = null, $second = null ) {
 		global $wpdb;
 
-		// Have to have at least one
+		// Have to have at least one.
 		if ( ! isset( $hour ) && ! isset( $minute ) && ! isset( $second ) ) {
 			return false;
 		}
 
-		// Complex combined queries aren't supported for multi-value queries
-		if ( in_array( $compare, array( 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN' ) ) ) {
+		// Complex combined queries aren't supported for multi-value queries.
+		if ( in_array( $compare, array( 'IN', 'NOT IN', 'BETWEEN', 'NOT BETWEEN' ), true ) ) {
 			$return = array();
 
 			$value = $this->build_value( $compare, $hour );
@@ -993,7 +1004,7 @@ class WP_Date_Query {
 			return implode( ' AND ', $return );
 		}
 
-		// Cases where just one unit is set
+		// Cases where just one unit is set.
 		if ( isset( $hour ) && ! isset( $minute ) && ! isset( $second ) ) {
 			$value = $this->build_value( $compare, $hour );
 			if ( false !== $value ) {
@@ -1019,7 +1030,7 @@ class WP_Date_Query {
 		$format = '';
 		$time   = '';
 
-		// Hour
+		// Hour.
 		if ( null !== $hour ) {
 			$format .= '%H.';
 			$time   .= sprintf( '%02d', $hour ) . '.';
@@ -1028,7 +1039,7 @@ class WP_Date_Query {
 			$time   .= '0.';
 		}
 
-		// Minute
+		// Minute.
 		$format .= '%i';
 		$time   .= sprintf( '%02d', $minute );
 
@@ -1038,5 +1049,21 @@ class WP_Date_Query {
 		}
 
 		return $wpdb->prepare( "DATE_FORMAT( $column, %s ) $compare %f", $format, $time );
+	}
+
+	/**
+	 * Sanitizes a 'relation' operator.
+	 *
+	 * @since 6.0.3
+	 *
+	 * @param string $relation Raw relation key from the query argument.
+	 * @return string Sanitized relation ('AND' or 'OR').
+	 */
+	public function sanitize_relation( $relation ) {
+		if ( 'OR' === strtoupper( $relation ) ) {
+			return 'OR';
+		} else {
+			return 'AND';
+		}
 	}
 }

@@ -160,7 +160,7 @@
 			}
 
 			&:before,
-			&:after, {
+			&:after {
 				position: absolute;
 				display: block;
 				width: 100%;
@@ -212,6 +212,7 @@
 
 		a {
 			text-decoration: underline;
+			text-decoration-thickness: 2px;
 
 			&.button,
 			&:hover {

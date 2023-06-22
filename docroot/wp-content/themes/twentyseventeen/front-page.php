@@ -8,14 +8,14 @@
  *
  * @package WordPress
  * @subpackage Twenty_Seventeen
- * @since 1.0
+ * @since Twenty Seventeen 1.0
  * @version 1.0
  */
 
 get_header(); ?>
 
 <div id="primary" class="content-area">
-	<main id="main" class="site-main" role="main">
+	<main id="main" class="site-main">
 
 		<?php
 		// Show the selected front page content.
@@ -34,9 +34,11 @@ get_header(); ?>
 		if ( 0 !== twentyseventeen_panel_count() || is_customize_preview() ) : // If we have pages to show.
 
 			/**
-			 * Filter number of front page sections in Twenty Seventeen.
+			 * Filters the number of front page sections in Twenty Seventeen.
 			 *
 			 * @since Twenty Seventeen 1.0
+			 *
+			 * @global int|string $twentyseventeencounter Front page section counter.
 			 *
 			 * @param int $num_sections Number of front page sections.
 			 */

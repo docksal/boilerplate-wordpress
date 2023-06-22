@@ -1,30 +1,31 @@
 {
   "name": "twentynineteen",
-  "version": "1.0.0",
+  "version": "2.5.0",
   "description": "Default WP Theme",
   "bugs": {
-    "url": "https://github.com/WordPress/twentynineteen/issues"
+    "url": "https://core.trac.wordpress.org/"
   },
-  "homepage": "https://github.com/WordPress/twentynineteen#readme",
+  "homepage": "https://wordpress.org/themes/twentynineteen/",
   "devDependencies": {
-    "@wordpress/browserslist-config": "^2.2.2",
-    "autoprefixer": "^9.1.5",
-    "chokidar-cli": "^1.2.1",
-    "node-sass": "^4.9.3",
+    "@wordpress/browserslist-config": "^5.9.0",
+    "autoprefixer": "^10.4.13",
+    "chokidar-cli": "^3.0.0",
+    "node-sass": "^8.0.0",
     "npm-run-all": "^4.1.5",
-    "postcss-cli": "^6.0.1",
-    "postcss-focus-within": "^3.0.0",
-    "rtlcss": "^2.4.0"
+    "postcss": "^8.4.21",
+    "postcss-cli": "^10.1.0",
+    "postcss-focus-within": "^7.0.2",
+    "rtlcss": "^4.0.0"
   },
   "rtlcssConfig": {
     "options": {
       "autoRename": false,
       "autoRenameStrict": false,
-      "blacklist": {},
       "clean": true,
       "greedy": false,
       "processUrls": false,
-      "stringMap": []
+      "stringMap": [],
+      "disablePolyfillReadyClass": true
     },
     "plugins": [],
     "map": false
