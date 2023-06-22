@@ -110,20 +110,28 @@ class IXR_Message
         $chunk_size = apply_filters( 'xmlrpc_chunk_parsing_size', $chunk_size );
 
         $final = false;
+
         do {
             if (strlen($this->message) <= $chunk_size) {
                 $final = true;
             }
+
             $part = substr($this->message, 0, $chunk_size);
             $this->message = substr($this->message, $chunk_size);
+
             if (!xml_parse($this->_parser, $part, $final)) {
+                xml_parser_free($this->_parser);
+                unset($this->_parser);
                 return false;
             }
+
             if ($final) {
                 break;
             }
         } while (true);
+
         xml_parser_free($this->_parser);
+        unset($this->_parser);
 
         // Grab the error messages, if any
         if ($this->messageType == 'fault') {
@@ -136,7 +144,7 @@ class IXR_Message
     function tag_open($parser, $tag, $attr)
     {
         $this->_currentTagContents = '';
-        $this->currentTag = $tag;
+        $this->_currentTag = $tag;
         switch($tag) {
             case 'methodCall':
             case 'methodResponse':

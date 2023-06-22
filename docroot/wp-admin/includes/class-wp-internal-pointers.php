@@ -12,6 +12,7 @@
  *
  * @since 3.3.0
  */
+#[AllowDynamicProperties]
 final class WP_Internal_Pointers {
 	/**
 	 * Initializes the new feature pointers.
@@ -48,10 +49,10 @@ final class WP_Internal_Pointers {
 		 *     )
 		 */
 		$registered_pointers = array(
-			//None currently.
+			// None currently.
 		);
 
-		// Check if screen related pointer is registered
+		// Check if screen related pointer is registered.
 		if ( empty( $registered_pointers[ $hook_suffix ] ) ) {
 			return;
 		}
@@ -75,7 +76,7 @@ final class WP_Internal_Pointers {
 			// None currently.
 		);
 
-		// Get dismissed pointers
+		// Get dismissed pointers.
 		$dismissed = explode( ',', (string) get_user_meta( get_current_user_id(), 'dismissed_wp_pointers', true ) );
 
 		$got_pointers = false;
@@ -88,7 +89,7 @@ final class WP_Internal_Pointers {
 				}
 			}
 
-			// Bind pointer print function
+			// Bind pointer print function.
 			add_action( 'admin_print_footer_scripts', array( 'WP_Internal_Pointers', 'pointer_' . $pointer ) );
 			$got_pointers = true;
 		}
@@ -97,7 +98,7 @@ final class WP_Internal_Pointers {
 			return;
 		}
 
-		// Add pointers script and style to queue
+		// Add pointers script and style to queue.
 		wp_enqueue_style( 'wp-pointer' );
 		wp_enqueue_script( 'wp-pointer' );
 	}
@@ -140,7 +141,9 @@ final class WP_Internal_Pointers {
 			if ( options.position && options.position.defer_loading )
 				$(window).bind( 'load.wp-pointers', setup );
 			else
-				$(document).ready( setup );
+				$( function() {
+					setup();
+				} );
 
 		})( jQuery );
 		</script>

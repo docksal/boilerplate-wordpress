@@ -12,6 +12,7 @@
  *
  * @since 4.5.0
  */
+#[AllowDynamicProperties]
 final class WP_Customize_Selective_Refresh {
 
 	/**
@@ -58,11 +59,11 @@ final class WP_Customize_Selective_Refresh {
 	 *
 	 * @since 4.5.0
 	 *
-	 * @param WP_Customize_Manager $manager Manager instance.
+	 * @param WP_Customize_Manager $manager Customizer bootstrap instance.
 	 */
 	public function __construct( WP_Customize_Manager $manager ) {
 		$this->manager = $manager;
-		require_once( ABSPATH . WPINC . '/customize/class-wp-customize-partial.php' );
+		require_once ABSPATH . WPINC . '/customize/class-wp-customize-partial.php';
 
 		add_action( 'customize_preview_init', array( $this, 'init_preview' ) );
 	}
@@ -83,29 +84,13 @@ final class WP_Customize_Selective_Refresh {
 	 *
 	 * @since 4.5.0
 	 *
-	 * @param WP_Customize_Partial|string $id   Customize Partial object, or Panel ID.
-	 * @param array                       $args {
-	 *  Optional. Array of properties for the new Partials object. Default empty array.
+	 * @see WP_Customize_Partial::__construct()
 	 *
-	 *  @type string   $type                  Type of the partial to be created.
-	 *  @type string   $selector              The jQuery selector to find the container element for the partial, that is, a partial's placement.
-	 *  @type array    $settings              IDs for settings tied to the partial.
-	 *  @type string   $primary_setting       The ID for the setting that this partial is primarily responsible for
-	 *                                        rendering. If not supplied, it will default to the ID of the first setting.
-	 *  @type string   $capability            Capability required to edit this partial.
-	 *                                        Normally this is empty and the capability is derived from the capabilities
-	 *                                        of the associated `$settings`.
-	 *  @type callable $render_callback       Render callback.
-	 *                                        Callback is called with one argument, the instance of WP_Customize_Partial.
-	 *                                        The callback can either echo the partial or return the partial as a string,
-	 *                                        or return false if error.
-	 *  @type bool     $container_inclusive   Whether the container element is included in the partial, or if only
-	 *                                        the contents are rendered.
-	 *  @type bool     $fallback_refresh      Whether to refresh the entire preview in case a partial cannot be refreshed.
-	 *                                        A partial render is considered a failure if the render_callback returns
-	 *                                        false.
-	 * }
-	 * @return WP_Customize_Partial             The instance of the panel that was added.
+	 * @param WP_Customize_Partial|string $id   Customize Partial object, or Partial ID.
+	 * @param array                       $args Optional. Array of properties for the new Partials object.
+	 *                                          See WP_Customize_Partial::__construct() for information
+	 *                                          on accepted arguments. Default empty array.
+	 * @return WP_Customize_Partial The instance of the partial that was added.
 	 */
 	public function add_partial( $id, $args = array() ) {
 		if ( $id instanceof WP_Customize_Partial ) {
@@ -187,7 +172,7 @@ final class WP_Customize_Selective_Refresh {
 			}
 		}
 
-		$switched_locale = switch_to_locale( get_user_locale() );
+		$switched_locale = switch_to_user_locale( get_current_user_id() );
 		$l10n            = array(
 			'shiftClickToEdit' => __( 'Shift-click to edit this element.' ),
 			'clickEditMenu'    => __( 'Click to edit this menu.' ),
@@ -208,7 +193,7 @@ final class WP_Customize_Selective_Refresh {
 		);
 
 		// Export data to JS.
-		echo sprintf( '<script>var _customizePartialRefreshExports = %s;</script>', wp_json_encode( $exports ) );
+		printf( '<script>var _customizePartialRefreshExports = %s;</script>', wp_json_encode( $exports ) );
 	}
 
 	/**
@@ -297,7 +282,7 @@ final class WP_Customize_Selective_Refresh {
 	 * @param int    $errno   Error number.
 	 * @param string $errstr  Error string.
 	 * @param string $errfile Error file.
-	 * @param string $errline Error line.
+	 * @param int    $errline Error line.
 	 * @return true Always true.
 	 */
 	public function handle_error( $errno, $errstr, $errfile = null, $errline = null ) {
@@ -351,7 +336,7 @@ final class WP_Customize_Selective_Refresh {
 		 *
 		 * @since 4.5.0
 		 *
-		 * @param WP_Customize_Selective_Refresh $this     Selective refresh component.
+		 * @param WP_Customize_Selective_Refresh $refresh  Selective refresh component.
 		 * @param array                          $partials Placements' context data for the partials rendered in the request.
 		 *                                                 The array is keyed by partial ID, with each item being an array of
 		 *                                                 the placements' context data.
@@ -400,7 +385,7 @@ final class WP_Customize_Selective_Refresh {
 		 *
 		 * @since 4.5.0
 		 *
-		 * @param WP_Customize_Selective_Refresh $this     Selective refresh component.
+		 * @param WP_Customize_Selective_Refresh $refresh  Selective refresh component.
 		 * @param array                          $partials Placements' context data for the partials rendered in the request.
 		 *                                                 The array is keyed by partial ID, with each item being an array of
 		 *                                                 the placements' context data.
@@ -444,7 +429,7 @@ final class WP_Customize_Selective_Refresh {
 		 *     @type array $errors   List of errors triggered during rendering of partials, if `WP_DEBUG_DISPLAY`
 		 *                           is enabled.
 		 * }
-		 * @param WP_Customize_Selective_Refresh $this     Selective refresh component.
+		 * @param WP_Customize_Selective_Refresh $refresh  Selective refresh component.
 		 * @param array                          $partials Placements' context data for the partials rendered in the request.
 		 *                                                 The array is keyed by partial ID, with each item being an array of
 		 *                                                 the placements' context data.

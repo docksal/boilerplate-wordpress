@@ -10,7 +10,7 @@
 if ( false ) {
 	?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<title>Error: PHP is not running</title>
@@ -33,16 +33,16 @@ if ( false ) {
 define( 'WP_INSTALLING', true );
 
 /** Load WordPress Bootstrap */
-require_once( dirname( dirname( __FILE__ ) ) . '/wp-load.php' );
+require_once dirname( __DIR__ ) . '/wp-load.php';
 
 /** Load WordPress Administration Upgrade API */
-require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
 /** Load WordPress Translation Install API */
-require_once( ABSPATH . 'wp-admin/includes/translation-install.php' );
+require_once ABSPATH . 'wp-admin/includes/translation-install.php';
 
 /** Load wpdb */
-require_once( ABSPATH . WPINC . '/wp-db.php' );
+require_once ABSPATH . WPINC . '/class-wpdb.php';
 
 nocache_headers();
 
@@ -65,7 +65,7 @@ function display_header( $body_classes = '' ) {
 	}
 	?>
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" <?php language_attributes(); ?>>
+<html <?php language_attributes(); ?>>
 <head>
 	<meta name="viewport" content="width=device-width" />
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -74,13 +74,13 @@ function display_header( $body_classes = '' ) {
 	<?php wp_admin_css( 'install', true ); ?>
 </head>
 <body class="wp-core-ui<?php echo $body_classes; ?>">
-<p id="logo"><a href="<?php echo esc_url( __( 'https://wordpress.org/' ) ); ?>"><?php _e( 'WordPress' ); ?></a></p>
+<p id="logo"><?php _e( 'WordPress' ); ?></p>
 
 	<?php
-} // end display_header()
+} // End display_header().
 
 /**
- * Display installer setup form.
+ * Displays installer setup form.
  *
  * @since 2.8.0
  *
@@ -91,13 +91,12 @@ function display_header( $body_classes = '' ) {
 function display_setup_form( $error = null ) {
 	global $wpdb;
 
-	$sql        = $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->users ) );
-	$user_table = ( $wpdb->get_var( $sql ) != null );
+	$user_table = ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->users ) ) ) !== null );
 
-	// Ensure that Blogs appear in search engines by default.
+	// Ensure that sites appear in search engines by default.
 	$blog_public = 1;
 	if ( isset( $_POST['weblog_title'] ) ) {
-		$blog_public = isset( $_POST['blog_public'] );
+		$blog_public = isset( $_POST['blog_public'] ) ? (int) $_POST['blog_public'] : $blog_public;
 	}
 
 	$weblog_title = isset( $_POST['weblog_title'] ) ? trim( wp_unslash( $_POST['weblog_title'] ) ) : '';
@@ -141,7 +140,7 @@ function display_setup_form( $error = null ) {
 			<td>
 				<div class="wp-pwd">
 					<?php $initial_password = isset( $_POST['admin_password'] ) ? stripslashes( $_POST['admin_password'] ) : wp_generate_password( 18 ); ?>
-					<input type="password" name="admin_password" id="pass1" class="regular-text" autocomplete="off" data-reveal="1" data-pw="<?php echo esc_attr( $initial_password ); ?>" aria-describedby="pass-strength-result" />
+					<input type="password" name="admin_password" id="pass1" class="regular-text" autocomplete="new-password" spellcheck="false" data-reveal="1" data-pw="<?php echo esc_attr( $initial_password ); ?>" aria-describedby="pass-strength-result" />
 					<button type="button" class="button wp-hide-pw hide-if-no-js" data-start-masked="<?php echo (int) isset( $_POST['admin_password'] ); ?>" data-toggle="0" aria-label="<?php esc_attr_e( 'Hide password' ); ?>">
 						<span class="dashicons dashicons-hidden"></span>
 						<span class="text"><?php _e( 'Hide' ); ?></span>
@@ -161,7 +160,7 @@ function display_setup_form( $error = null ) {
 				</label>
 			</th>
 			<td>
-				<input name="admin_password2" type="password" id="pass2" autocomplete="off" />
+				<input type="password" name="admin_password2" id="pass2" autocomplete="new-password" spellcheck="false" />
 			</td>
 		</tr>
 		<tr class="pw-weak">
@@ -180,15 +179,23 @@ function display_setup_form( $error = null ) {
 			<p><?php _e( 'Double-check your email address before continuing.' ); ?></p></td>
 		</tr>
 		<tr>
-			<th scope="row"><?php has_action( 'blog_privacy_selector' ) ? _e( 'Site Visibility' ) : _e( 'Search Engine Visibility' ); ?></th>
+			<th scope="row"><?php has_action( 'blog_privacy_selector' ) ? _e( 'Site visibility' ) : _e( 'Search engine visibility' ); ?></th>
 			<td>
 				<fieldset>
-					<legend class="screen-reader-text"><span><?php has_action( 'blog_privacy_selector' ) ? _e( 'Site Visibility' ) : _e( 'Search Engine Visibility' ); ?> </span></legend>
+					<legend class="screen-reader-text"><span>
+						<?php
+						has_action( 'blog_privacy_selector' )
+							/* translators: Hidden accessibility text. */
+							? _e( 'Site visibility' )
+							/* translators: Hidden accessibility text. */
+							: _e( 'Search engine visibility' );
+						?>
+					</span></legend>
 					<?php
 					if ( has_action( 'blog_privacy_selector' ) ) {
 						?>
 						<input id="blog-public" type="radio" name="blog_public" value="1" <?php checked( 1, $blog_public ); ?> />
-						<label for="blog-public"><?php _e( 'Allow search engines to index this site' ); ?></label><br/>
+						<label for="blog-public"><?php _e( 'Allow search engines to index this site' ); ?></label><br />
 						<input id="blog-norobots" type="radio" name="blog_public" value="0" <?php checked( 0, $blog_public ); ?> />
 						<label for="blog-norobots"><?php _e( 'Discourage search engines from indexing this site' ); ?></label>
 						<p class="description"><?php _e( 'Note: Neither of these options blocks access to your site &mdash; it is up to search engines to honor your request.' ); ?></p>
@@ -209,7 +216,7 @@ function display_setup_form( $error = null ) {
 	<input type="hidden" name="language" value="<?php echo isset( $_REQUEST['language'] ) ? esc_attr( $_REQUEST['language'] ) : ''; ?>" />
 </form>
 	<?php
-} // end display_setup_form()
+} // End display_setup_form().
 
 // Let's check to make sure WP isn't already installed.
 if ( is_blog_installed() ) {
@@ -223,13 +230,14 @@ if ( is_blog_installed() ) {
 }
 
 /**
- * @global string $wp_version
- * @global string $required_php_version
- * @global string $required_mysql_version
+ * @global string $wp_version             The WordPress version string.
+ * @global string $required_php_version   The required PHP version string.
+ * @global string $required_mysql_version The required MySQL version string.
+ * @global wpdb   $wpdb                   WordPress database abstraction object.
  */
-global $wp_version, $required_php_version, $required_mysql_version;
+global $wp_version, $required_php_version, $required_mysql_version, $wpdb;
 
-$php_version   = phpversion();
+$php_version   = PHP_VERSION;
 $mysql_version = $wpdb->db_version();
 $php_compat    = version_compare( $php_version, $required_php_version, '>=' );
 $mysql_compat  = version_compare( $mysql_version, $required_mysql_version, '>=' ) || file_exists( WP_CONTENT_DIR . '/db.php' );
@@ -240,23 +248,47 @@ $version_url = sprintf(
 	sanitize_title( $wp_version )
 );
 
-/* translators: %s: URL to Update PHP page. */
-$php_update_message = '</p><p>' . sprintf( __( '<a href="%s">Learn more about updating PHP</a>.' ), esc_url( wp_get_update_php_url() ) );
+$php_update_message = '</p><p>' . sprintf(
+	/* translators: %s: URL to Update PHP page. */
+	__( '<a href="%s">Learn more about updating PHP</a>.' ),
+	esc_url( wp_get_update_php_url() )
+);
 
 $annotation = wp_get_update_php_annotation();
+
 if ( $annotation ) {
 	$php_update_message .= '</p><p><em>' . $annotation . '</em>';
 }
 
 if ( ! $mysql_compat && ! $php_compat ) {
-	/* translators: 1: URL to WordPress release notes, 2: WordPress version number, 3: Minimum required PHP version number, 4: Minimum required MySQL version number, 5: Current PHP version number, 6: Current MySQL version number. */
-	$compat = sprintf( __( 'You cannot install because <a href="%1$s">WordPress %2$s</a> requires PHP version %3$s or higher and MySQL version %4$s or higher. You are running PHP version %5$s and MySQL version %6$s.' ), $version_url, $wp_version, $required_php_version, $required_mysql_version, $php_version, $mysql_version ) . $php_update_message;
+	$compat = sprintf(
+		/* translators: 1: URL to WordPress release notes, 2: WordPress version number, 3: Minimum required PHP version number, 4: Minimum required MySQL version number, 5: Current PHP version number, 6: Current MySQL version number. */
+		__( 'You cannot install because <a href="%1$s">WordPress %2$s</a> requires PHP version %3$s or higher and MySQL version %4$s or higher. You are running PHP version %5$s and MySQL version %6$s.' ),
+		$version_url,
+		$wp_version,
+		$required_php_version,
+		$required_mysql_version,
+		$php_version,
+		$mysql_version
+	) . $php_update_message;
 } elseif ( ! $php_compat ) {
-	/* translators: 1: URL to WordPress release notes, 2: WordPress version number, 3: Minimum required PHP version number, 4: Current PHP version number. */
-	$compat = sprintf( __( 'You cannot install because <a href="%1$s">WordPress %2$s</a> requires PHP version %3$s or higher. You are running version %4$s.' ), $version_url, $wp_version, $required_php_version, $php_version ) . $php_update_message;
+	$compat = sprintf(
+		/* translators: 1: URL to WordPress release notes, 2: WordPress version number, 3: Minimum required PHP version number, 4: Current PHP version number. */
+		__( 'You cannot install because <a href="%1$s">WordPress %2$s</a> requires PHP version %3$s or higher. You are running version %4$s.' ),
+		$version_url,
+		$wp_version,
+		$required_php_version,
+		$php_version
+	) . $php_update_message;
 } elseif ( ! $mysql_compat ) {
-	/* translators: 1: URL to WordPress release notes, 2: WordPress version number, 3: Minimum required MySQL version number, 4: Current MySQL version number. */
-	$compat = sprintf( __( 'You cannot install because <a href="%1$s">WordPress %2$s</a> requires MySQL version %3$s or higher. You are running version %4$s.' ), $version_url, $wp_version, $required_mysql_version, $mysql_version );
+	$compat = sprintf(
+		/* translators: 1: URL to WordPress release notes, 2: WordPress version number, 3: Minimum required MySQL version number, 4: Current MySQL version number. */
+		__( 'You cannot install because <a href="%1$s">WordPress %2$s</a> requires MySQL version %3$s or higher. You are running version %4$s.' ),
+		$version_url,
+		$wp_version,
+		$required_mysql_version,
+		$mysql_version
+	);
 }
 
 if ( ! $mysql_compat || ! $php_compat ) {
@@ -290,7 +322,7 @@ if ( defined( 'DO_NOT_UPGRADE_GLOBAL_TABLES' ) ) {
 }
 
 /**
- * @global string    $wp_local_package
+ * @global string    $wp_local_package Locale code of the package.
  * @global WP_Locale $wp_locale        WordPress date and time locale object.
  */
 $language = '';
@@ -303,7 +335,7 @@ if ( ! empty( $_REQUEST['language'] ) ) {
 $scripts_to_print = array( 'jquery' );
 
 switch ( $step ) {
-	case 0: // Step 0
+	case 0: // Step 0.
 		if ( wp_can_install_language_pack() && empty( $language ) ) {
 			$languages = wp_get_available_translations();
 			if ( $languages ) {
@@ -335,7 +367,7 @@ switch ( $step ) {
 <p><?php _e( 'Welcome to the famous five-minute WordPress installation process! Just fill in the information below and you&#8217;ll be on your way to using the most extendable and powerful personal publishing platform in the world.' ); ?></p>
 
 <h2><?php _e( 'Information needed' ); ?></h2>
-<p><?php _e( 'Please provide the following information. Don&#8217;t worry, you can always change these settings later.' ); ?></p>
+<p><?php _e( 'Please provide the following information. Do not worry, you can always change these settings later.' ); ?></p>
 
 		<?php
 		display_setup_form();
@@ -355,7 +387,7 @@ switch ( $step ) {
 		$scripts_to_print[] = 'user-profile';
 
 		display_header();
-		// Fill in the data we gathered
+		// Fill in the data we gathered.
 		$weblog_title         = isset( $_POST['weblog_title'] ) ? trim( wp_unslash( $_POST['weblog_title'] ) ) : '';
 		$user_name            = isset( $_POST['user_name'] ) ? trim( wp_unslash( $_POST['user_name'] ) ) : '';
 		$admin_password       = isset( $_POST['admin_password'] ) ? wp_unslash( $_POST['admin_password'] ) : '';
@@ -366,27 +398,27 @@ switch ( $step ) {
 		// Check email address.
 		$error = false;
 		if ( empty( $user_name ) ) {
-			// TODO: poka-yoke
+			// TODO: Poka-yoke.
 			display_setup_form( __( 'Please provide a valid username.' ) );
 			$error = true;
-		} elseif ( $user_name != sanitize_user( $user_name, true ) ) {
+		} elseif ( sanitize_user( $user_name, true ) !== $user_name ) {
 			display_setup_form( __( 'The username you provided has invalid characters.' ) );
 			$error = true;
-		} elseif ( $admin_password != $admin_password_check ) {
-			// TODO: poka-yoke
+		} elseif ( $admin_password !== $admin_password_check ) {
+			// TODO: Poka-yoke.
 			display_setup_form( __( 'Your passwords do not match. Please try again.' ) );
 			$error = true;
 		} elseif ( empty( $admin_email ) ) {
-			// TODO: poka-yoke
+			// TODO: Poka-yoke.
 			display_setup_form( __( 'You must provide an email address.' ) );
 			$error = true;
 		} elseif ( ! is_email( $admin_email ) ) {
-			// TODO: poka-yoke
-			display_setup_form( __( 'Sorry, that isn&#8217;t a valid email address. Email addresses look like <code>username@example.com</code>.' ) );
+			// TODO: Poka-yoke.
+			display_setup_form( __( 'Sorry, that is not a valid email address. Email addresses look like <code>username@example.com</code>.' ) );
 			$error = true;
 		}
 
-		if ( $error === false ) {
+		if ( false === $error ) {
 			$wpdb->show_errors();
 			$result = wp_install( $weblog_title, $user_name, $admin_email, $public, '', wp_slash( $admin_password ), $loaded_language );
 			?>
@@ -403,11 +435,9 @@ switch ( $step ) {
 	<tr>
 		<th><?php _e( 'Password' ); ?></th>
 		<td>
-			<?php
-			if ( ! empty( $result['password'] ) && empty( $admin_password_check ) ) :
-				?>
-			<code><?php echo esc_html( $result['password'] ); ?></code><br />
-		<?php endif ?>
+			<?php if ( ! empty( $result['password'] ) && empty( $admin_password_check ) ) : ?>
+				<code><?php echo esc_html( $result['password'] ); ?></code><br />
+			<?php endif; ?>
 			<p><?php echo $result['password_message']; ?></p>
 		</td>
 	</tr>
