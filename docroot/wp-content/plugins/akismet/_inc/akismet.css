@@ -79,15 +79,6 @@ table.comments td.comment p a:after {
 .checkforspam {
     display: inline-block !important;
 }
-.checkforspam-progress {
-	display: none;
-}
-.checkforspam.checking .checkforspam-progress {
-	padding-left: 1ex;
-}
-.checkforspam.button-disabled .checkforspam-progress {
-	display: inline;
-}
 
 .checkforspam-spinner {
     display: inline-block;
@@ -109,25 +100,14 @@ table.comments td.comment p a:after {
 	margin-top: .5rem;
 }
 .akismet-alert {
-	border: 1px solid #e5e5e5;
 	padding: 0.4em 1em 1.4em 1em;
-    border-radius: 3px;
-    -webkit-border-radius: 3px;
-    border-width: 1px;
-    border-style: solid;
+	box-sizing: border-box;
+	box-shadow: 0 0 0 1px rgba(200, 215, 225, 0.5), 0 1px 2px #e9eff3;
 }
 
 .akismet-alert h3.akismet-key-status {
 	color: #fff;
 	margin: 1em 0 0.5em 0;
-}
-
-.akismet-alert.akismet-critical {
-	background-color: #993300;
-}
-
-.akismet-alert.akismet-active {
-	background-color: #649316;
 }
 
 .akismet-alert p.akismet-key-status {
@@ -150,7 +130,6 @@ table.comments td.comment p a:after {
 
 .akismet-new-snapshot {
 	margin-top: 1em;
-	padding: 1em;
 	text-align: center;
 	background: #fff;
 }
@@ -160,7 +139,6 @@ table.comments td.comment p a:after {
 	color: #888;
 	font-size: 11px;
     margin: 0;
-    padding: 3px;
 }
 
 .new-snapspot ul {
@@ -170,24 +148,15 @@ table.comments td.comment p a:after {
 
 .akismet-new-snapshot ul li {
     color: #999;
-	float: left;
     font-size: 11px;
-	padding: 0 20px;
     text-transform: uppercase;
-	width: 33%;
 	box-sizing: border-box;
 	-moz-box-sizing: border-box;
 	-webkit-box-sizing: border-box;
 	-ms-box-sizing: border-box;
 }
 
-.akismet-new-snapshot ul li:first-child,
-.akismet-new-snapshot ul li:nth-child(2) {
-	border-right:1px dotted #ccc;
-}
-
-.akismet-new-snapshot ul li span {
-    color: #52accc;
+.akismet-new-snapshot__number {
 	display: block;
 	font-size: 32px;
 	font-weight: lighter;
@@ -202,10 +171,6 @@ table.comments td.comment p a:after {
 .akismet-settings th.akismet-api-key {
 	vertical-align: middle;
 	padding-top: 0;
-}
-
-.akismet-settings input[type=text] {
-	width: 75%;
 }
 
 .akismet-settings span.akismet-note{
@@ -371,10 +336,6 @@ table.comments td.comment p a:after {
 .akismet-masthead__logo-container {
 	padding:.3125rem 0 0
 }
-.akismet-masthead__logo {
-	width:10.375rem;
-	height:1.8125rem;
-}
 .akismet-masthead__logo-link {
 	display:inline-block;
 	outline:none;
@@ -460,10 +421,8 @@ table.comments td.comment p a:after {
 	margin-top: 1rem;
 	margin-bottom: 0;
 	position: relative;
-	margin: 0 auto 0.625rem auto;
 	box-sizing: border-box;
 	background: white;
-	box-shadow: 0 0 0 1px rgba(200, 215, 225, 0.5), 0 1px 2px #e9eff3;
 }
 
 .akismet-card:after, .akismet-card .inside:after, .akismet-masthead__logo-container:after {
@@ -660,4 +619,71 @@ table.comments td.comment p a:after {
 
 .akismet-section-header__actions {
 	line-height: 1.75rem;
+}
+
+.akismet-setup-instructions {
+	text-align: center;
+}
+
+.akismet-setup-instructions form {
+	padding-bottom: 1.5rem;
+}
+
+div.error.akismet-usage-limit-alert {
+	padding: 25px 45px 25px 15px;
+	display: flex;
+	align-items: center;
+}
+
+#akismet-plugin-container .akismet-usage-limit-alert {
+	margin: 0 auto 0.625rem auto;
+	box-sizing: border-box;
+	box-shadow: 0 0 0 1px rgba(200, 215, 225, 0.5), 0 1px 2px #e9eff3;
+	border: none;
+	border-left: 4px solid #d63638;
+}
+
+.akismet-usage-limit-alert .akismet-usage-limit-logo {
+	width: 38px;
+	min-width: 38px;
+	height: 38px;
+	border-radius: 20px;
+	margin-right: 18px;
+	background: black;
+	position: relative;
+}
+
+.akismet-usage-limit-alert .akismet-usage-limit-logo img {
+	position: absolute;
+	width: 22px;
+	left: 8px;
+	top: 10px;
+}
+
+.akismet-usage-limit-alert .akismet-usage-limit-text {
+	flex-grow: 1;
+	margin-right: 18px;
+}
+
+.akismet-usage-limit-alert h3 {
+	margin: 0;
+}
+
+.akismet-usage-limit-alert .akismet-usage-limit-cta {
+	text-align: right;
+}
+
+@media (max-width: 550px) {
+	div.error.akismet-usage-limit-alert {
+		display: block;
+	}
+
+	.akismet-usage-limit-alert .akismet-usage-limit-logo,
+	.akismet-usage-limit-alert .akismet-usage-limit-text {
+		margin-bottom: 15px;
+	}
+
+	.akismet-usage-limit-alert .akismet-usage-limit-cta {
+		text-align: left;
+	}
 }
