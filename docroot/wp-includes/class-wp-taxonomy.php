@@ -30,12 +30,17 @@ final class WP_Taxonomy {
 	public $label;
 
 	/**
-	 * An array of labels for this taxonomy.
+	 * Labels object for this taxonomy.
+	 *
+	 * If not set, tag labels are inherited for non-hierarchical types
+	 * and category labels for hierarchical ones.
+	 *
+	 * @see get_taxonomy_labels()
 	 *
 	 * @since 4.7.0
-	 * @var object
+	 * @var stdClass
 	 */
-	public $labels = array();
+	public $labels;
 
 	/**
 	 * A short descriptive summary of what the taxonomy is for.
@@ -147,7 +152,7 @@ final class WP_Taxonomy {
 	 * Capabilities for this taxonomy.
 	 *
 	 * @since 4.7.0
-	 * @var object
+	 * @var stdClass
 	 */
 	public $cap;
 
@@ -195,6 +200,14 @@ final class WP_Taxonomy {
 	public $rest_base;
 
 	/**
+	 * The namespace for this taxonomy's REST API endpoints.
+	 *
+	 * @since 5.9.0
+	 * @var string|bool $rest_namespace
+	 */
+	public $rest_namespace;
+
+	/**
 	 * The controller for this taxonomy's REST API endpoints.
 	 *
 	 * Custom controllers must extend WP_REST_Controller.
@@ -203,6 +216,43 @@ final class WP_Taxonomy {
 	 * @var string|bool $rest_controller_class
 	 */
 	public $rest_controller_class;
+
+	/**
+	 * The controller instance for this taxonomy's REST API endpoints.
+	 *
+	 * Lazily computed. Should be accessed using {@see WP_Taxonomy::get_rest_controller()}.
+	 *
+	 * @since 5.5.0
+	 * @var WP_REST_Controller $rest_controller
+	 */
+	public $rest_controller;
+
+	/**
+	 * The default term name for this taxonomy. If you pass an array you have
+	 * to set 'name' and optionally 'slug' and 'description'.
+	 *
+	 * @since 5.5.0
+	 * @var array|string
+	 */
+	public $default_term;
+
+	/**
+	 * Whether terms in this taxonomy should be sorted in the order they are provided to `wp_set_object_terms()`.
+	 *
+	 * Use this in combination with `'orderby' => 'term_order'` when fetching terms.
+	 *
+	 * @since 2.5.0
+	 * @var bool|null
+	 */
+	public $sort = null;
+
+	/**
+	 * Array of arguments to automatically use inside `wp_get_object_terms()` for this taxonomy.
+	 *
+	 * @since 2.6.0
+	 * @var array|null
+	 */
+	public $args = null;
 
 	/**
 	 * Whether it is a built-in taxonomy.
@@ -214,6 +264,8 @@ final class WP_Taxonomy {
 
 	/**
 	 * Constructor.
+	 *
+	 * See the register_taxonomy() function for accepted arguments for `$args`.
 	 *
 	 * @since 4.7.0
 	 *
@@ -233,6 +285,8 @@ final class WP_Taxonomy {
 	/**
 	 * Sets taxonomy properties.
 	 *
+	 * See the register_taxonomy() function for accepted arguments for `$args`.
+	 *
 	 * @since 4.7.0
 	 *
 	 * @param array|string $object_type Name of the object type for the taxonomy object.
@@ -247,6 +301,7 @@ final class WP_Taxonomy {
 		 * @since 4.4.0
 		 *
 		 * @param array    $args        Array of arguments for registering a taxonomy.
+		 *                              See the register_taxonomy() function for accepted arguments.
 		 * @param string   $taxonomy    Taxonomy key.
 		 * @param string[] $object_type Array of names of object types for the taxonomy.
 		 */
@@ -272,13 +327,17 @@ final class WP_Taxonomy {
 			'update_count_callback' => '',
 			'show_in_rest'          => false,
 			'rest_base'             => false,
+			'rest_namespace'        => false,
 			'rest_controller_class' => false,
+			'default_term'          => null,
+			'sort'                  => null,
+			'args'                  => null,
 			'_builtin'              => false,
 		);
 
 		$args = array_merge( $defaults, $args );
 
-		// If not set, default to the setting for public.
+		// If not set, default to the setting for 'public'.
 		if ( null === $args['publicly_queryable'] ) {
 			$args['publicly_queryable'] = $args['public'];
 		}
@@ -290,11 +349,11 @@ final class WP_Taxonomy {
 				$args['query_var'] = sanitize_title_with_dashes( $args['query_var'] );
 			}
 		} else {
-			// Force query_var to false for non-public taxonomies.
+			// Force 'query_var' to false for non-public taxonomies.
 			$args['query_var'] = false;
 		}
 
-		if ( false !== $args['rewrite'] && ( is_admin() || '' != get_option( 'permalink_structure' ) ) ) {
+		if ( false !== $args['rewrite'] && ( is_admin() || get_option( 'permalink_structure' ) ) ) {
 			$args['rewrite'] = wp_parse_args(
 				$args['rewrite'],
 				array(
@@ -309,29 +368,34 @@ final class WP_Taxonomy {
 			}
 		}
 
-		// If not set, default to the setting for public.
+		// If not set, default to the setting for 'public'.
 		if ( null === $args['show_ui'] ) {
 			$args['show_ui'] = $args['public'];
 		}
 
-		// If not set, default to the setting for show_ui.
+		// If not set, default to the setting for 'show_ui'.
 		if ( null === $args['show_in_menu'] || ! $args['show_ui'] ) {
 			$args['show_in_menu'] = $args['show_ui'];
 		}
 
-		// If not set, default to the setting for public.
+		// If not set, default to the setting for 'public'.
 		if ( null === $args['show_in_nav_menus'] ) {
 			$args['show_in_nav_menus'] = $args['public'];
 		}
 
-		// If not set, default to the setting for show_ui.
+		// If not set, default to the setting for 'show_ui'.
 		if ( null === $args['show_tagcloud'] ) {
 			$args['show_tagcloud'] = $args['show_ui'];
 		}
 
-		// If not set, default to the setting for show_ui.
+		// If not set, default to the setting for 'show_ui'.
 		if ( null === $args['show_in_quick_edit'] ) {
 			$args['show_in_quick_edit'] = $args['show_ui'];
+		}
+
+		// If not set, default rest_namespace to wp/v2 if show_in_rest is true.
+		if ( false === $args['rest_namespace'] && ! empty( $args['show_in_rest'] ) ) {
+			$args['rest_namespace'] = 'wp/v2';
 		}
 
 		$default_caps = array(
@@ -346,7 +410,7 @@ final class WP_Taxonomy {
 
 		$args['object_type'] = array_unique( (array) $object_type );
 
-		// If not set, use the default meta box
+		// If not set, use the default meta box.
 		if ( null === $args['meta_box_cb'] ) {
 			if ( $args['hierarchical'] ) {
 				$args['meta_box_cb'] = 'post_categories_meta_box';
@@ -369,6 +433,21 @@ final class WP_Taxonomy {
 					$args['meta_box_sanitize_cb'] = 'taxonomy_meta_box_sanitize_cb_input';
 					break;
 			}
+		}
+
+		// Default taxonomy term.
+		if ( ! empty( $args['default_term'] ) ) {
+			if ( ! is_array( $args['default_term'] ) ) {
+				$args['default_term'] = array( 'name' => $args['default_term'] );
+			}
+			$args['default_term'] = wp_parse_args(
+				$args['default_term'],
+				array(
+					'name'        => '',
+					'slug'        => '',
+					'description' => '',
+				)
+			);
 		}
 
 		foreach ( $args as $property_name => $property_value ) {
@@ -395,7 +474,7 @@ final class WP_Taxonomy {
 			$wp->add_query_var( $this->query_var );
 		}
 
-		if ( false !== $this->rewrite && ( is_admin() || '' != get_option( 'permalink_structure' ) ) ) {
+		if ( false !== $this->rewrite && ( is_admin() || get_option( 'permalink_structure' ) ) ) {
 			if ( $this->hierarchical && $this->rewrite['hierarchical'] ) {
 				$tag = '(.+?)';
 			} else {
@@ -446,5 +525,41 @@ final class WP_Taxonomy {
 	 */
 	public function remove_hooks() {
 		remove_filter( 'wp_ajax_add-' . $this->name, '_wp_ajax_add_hierarchical_term' );
+	}
+
+	/**
+	 * Gets the REST API controller for this taxonomy.
+	 *
+	 * Will only instantiate the controller class once per request.
+	 *
+	 * @since 5.5.0
+	 *
+	 * @return WP_REST_Controller|null The controller instance, or null if the taxonomy
+	 *                                 is set not to show in rest.
+	 */
+	public function get_rest_controller() {
+		if ( ! $this->show_in_rest ) {
+			return null;
+		}
+
+		$class = $this->rest_controller_class ? $this->rest_controller_class : WP_REST_Terms_Controller::class;
+
+		if ( ! class_exists( $class ) ) {
+			return null;
+		}
+
+		if ( ! is_subclass_of( $class, WP_REST_Controller::class ) ) {
+			return null;
+		}
+
+		if ( ! $this->rest_controller ) {
+			$this->rest_controller = new $class( $this->name );
+		}
+
+		if ( ! ( $this->rest_controller instanceof $class ) ) {
+			return null;
+		}
+
+		return $this->rest_controller;
 	}
 }
